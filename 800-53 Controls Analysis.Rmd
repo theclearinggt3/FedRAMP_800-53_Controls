@@ -1,0 +1,336 @@
+---
+title: "800-53 Controls"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+```
+
+##1. 800-53 subcontrol relations
+This spreadsheet is a web-scrape of 800-53 detail for the FedRAMP High Baseline (~170 controls) with sub-control detail. Column A displays the main control. Column B displays the subcontrol (or enhancement). (Example: Row 2 is AC-2(4) which is an individual subcontrol of AC-2, so on and so forth). Column C shows the related controls for each subcontrol.
+
+Could you work with this data set so that it can be more easily manipulated and come up with any detail you can surmise. Things that would be great to understand are:
+- Count (#) of related controls for each subcontrol
+- Most important related controls - by count / frequency
+- Most important related controls - by co-occurence 
+- Most important subcontrols - by count of related controls and co-occurrence
+- Most important control families - by count of related controls / ratio of subcontrols
+
+I'm going to give you creative license here. If anything doesnt make sense, feel free to ask Dan or I but don't get too into the weeds.
+
+##2. controls_4.xlsx
+This is a spreadsheet I have had some fun with already. Could you help organize the first worksheet which shows the related controls for each control in the high baseline. Column A shows the control. Columns B --> AB show the related controls for that control. 
+
+Think of the first sheet as granular detail to the second spreadsheet. 
+
+
+Reading in the data set. It is the third version, last edited on June 12th. 
+```{r}
+library(readxl)
+Controls <- read_excel("800-53 subcontrol relations v3.xlsx")
+head(Controls)
+```
+   
+#Data Cleaning  
+    
+Filtering through the data set to analyze the high baseline controls. 
+```{r}
+HighControls <- Controls %>%
+  filter(High == "Y") %>% #filtering to High Baseline 
+  select(Family, `Main Control`, `Control Enhancement`, Combined, `Related Controls`) %>% 
+  rename(`Control Family` = Family)
+
+View(HighControls)
+```
+
+
+##High Control 1 
+
+Spreading Related Control into different columns.
+```{r warning = FALSE}
+#spreading Related Controls into different columns 
+HighControls1 <- HighControls %>%
+  select(-`Control Enhancement`) %>%
+  separate('Related Controls', paste("Related Control", 1:28, sep = " "), sep = ",", extra = "warn")
+
+head(HighControls1)
+```
+
+##High Controls 2 
+
+Spreading Related Control into different columns and gathering the control enhancement by main controls (removing the control enhancement detail). 
+```{r warning = FALSE}
+HighControls2 <- HighControls %>%
+  select(-`Control Enhancement`, -`Combined`) %>%
+  separate(`Related Controls`, paste("Related Control", 1:28, sep = " "), sep = ",", extra = "warn") %>%
+  gather(AllRelatedControls, Value, `Related Control 1`:`Related Control 28`, na.rm = TRUE) %>%
+  group_by(`Main Control`) %>%
+  mutate(AllRelatedControls2 = paste("Related Control", 1:n(), sep = " ")) %>% 
+  ungroup() %>%
+  select(-AllRelatedControls) %>%
+  spread(AllRelatedControls2, Value, convert = TRUE) %>%
+  select(`Control Family`, `Main Control`, `Related Control 1`, `Related Control 2`, `Related Control 3`, 
+         `Related Control 4`, `Related Control 5`, `Related Control 6`, `Related Control 7`, `Related Control 8`, 
+         `Related Control 9`, `Related Control 10`, `Related Control 11`, `Related Control 12`, 
+         `Related Control 13`, `Related Control 14`, `Related Control 15`, `Related Control 16`, 
+         `Related Control 17`, `Related Control 18`, `Related Control 19`, `Related Control 20`, 
+         `Related Control 21`, `Related Control 22`, `Related Control 23`, `Related Control 24`, 
+         `Related Control 25`, `Related Control 26`, `Related Control 27`, `Related Control 28`, 
+         `Related Control 29`, `Related Control 30`, `Related Control 31`, `Related Control 32`, 
+         `Related Control 33`, `Related Control 34`, `Related Control 35`, `Related Control 36`, 
+         `Related Control 37`)  
+
+head(HighControls2)
+```
+
+##High Controls 3 
+
+Similar to HighControls1 but reformatted to make it easier to read, manipulate, and analyze. 
+```{r}
+HighControls3 <- HighControls1 %>%
+  gather(AllRelatedControls, Value, `Related Control 1`:`Related Control 28`, na.rm = TRUE) %>%
+  group_by(`Main Control`, `Combined`) %>%
+  mutate(AllRelatedControls2 = paste("Related Control", 1:n(), sep = " ")) %>%
+  rename(`Related Controls` = `Value`) %>%
+  select(-`AllRelatedControls`, -`AllRelatedControls2`) %>%
+  ungroup() %>%
+  arrange(`Main Control`, `Combined`) 
+
+HighControls3
+```
+   
+##High Controls 4      
+     
+Similar to HighControls2 but reformatted to make it easier to manipulate. 
+```{r}
+HighControls4 <- HighControls1 %>%
+  select(-`Combined`) %>%
+  gather(AllRelatedControls, Value, `Related Control 1`:`Related Control 28`, na.rm = TRUE) %>%
+  group_by(`Main Control`) %>%
+  mutate(AllRelatedControls2 = paste("Related Control", 1:n(), sep = " ")) %>%
+  rename(`Related Controls` = `Value`) %>%
+  select(-`AllRelatedControls`, -`AllRelatedControls2`) %>%
+  ungroup() %>%
+  arrange(`Main Control`) 
+
+HighControls4
+```
+     
+
+#Data Analysis    
+
+**1. Most important Related Controls - by count / frequency**
+```{r}
+CountRC <- HighControls3 %>%
+  group_by(`Related Controls`) %>%
+  summarise(n_RelatedControls = n()) %>%
+  arrange(desc(n_RelatedControls))
+
+CountRC
+
+#TESTING
+
+#Number of Related Controls when Related Controls = "AU-12"? 
+#Answer = 13
+HighControls3 %>%
+  filter(`Related Controls` == 'AC-3')   
+
+#VISUAL
+
+CountRC %>%
+  filter(n_RelatedControls >= 10) %>%
+  ggplot(aes(reorder(`Related Controls`, -n_RelatedControls), n_RelatedControls)) +
+    geom_bar(stat = "identity") +
+    ggtitle("Most Important Related Controls based on Count") +
+    xlab("Top 21 Related Controls") + 
+    ylab("Number of Related Controls")
+```    
+
+
+**2. Number of Related Controls for each Control** 
+```{r}
+CountRC_CE <- HighControls3 %>%
+  group_by(`Combined`) %>%
+  summarise(n_RelatedControls = n()) %>%
+  arrange(desc(n_RelatedControls))
+
+CountRC_CE
+
+#TESTING
+
+#How many Related Controls are there when the Main Control = "AU-6" and the Control Enhancement = "0"? 
+#Answer = 28
+HighControls3 %>%
+  filter(`Combined` == 'AU-6-0')
+
+#VISUAL
+
+CountRC_CE %>%
+  filter(n_RelatedControls >= 15) %>%
+  ggplot(aes(reorder(`Combined`, -n_RelatedControls), n_RelatedControls)) +
+    geom_bar(stat = "identity") + 
+    ggtitle("Largest Amount of Related Controls for each Control") +
+    xlab("Top 11 Controls") + 
+    ylab("Number of Related Controls")
+```
+
+**3. Number of Related Controls for each Main Control** #FIX VISUAL
+```{r}
+#Most important related controls for each main control 
+CountRC_MC <- HighControls3 %>%
+  group_by(`Main Control`, `Related Controls`) %>%
+  summarise(n_RelatedControls = n()) %>%
+  arrange(desc(n_RelatedControls))
+
+CountRC_MC
+
+#TESTING
+
+#Number of Related Controls when Related Controls = "AU-12" and Main Control = "AU-6"? 
+#Answer = 4
+HighControls3 %>%
+  filter(`Related Controls` == 'AU-12', 
+         `Main Control` == 'AU-6')
+
+#VISUAL
+
+CountRC_MC %>%
+  filter(n_RelatedControls > 1) %>%
+  ggplot(aes(reorder(`Main Control`, -n_RelatedControls), n_RelatedControls)) +
+    geom_point() +
+    #geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
+    ggtitle("Largest Amount of Related Controls for each Main Control") +
+    xlab("Top 16 Main Controls") + 
+    ylab("Number of Related Controls")
+```
+
+**4. Number of Related Controls for each Control Family** #FIX VISUAL AND ANALYSIS
+```{r}
+CountRC_CF <- HighControls3 %>%
+  group_by(`Control Family`, `Related Controls`) %>%
+  summarise(n_RelatedControls = n()) %>%
+  arrange(desc(n_RelatedControls))
+
+CountRC_CF
+
+#TESTING
+
+#Number of Related Controls when Related Controls = "AU-12" and Control Family = "AC"? 
+#Answer = 13
+HighControls3 %>%
+  filter(`Related Controls` == 'AC-3', 
+         `Control Family` == 'AC')   
+  
+#VISUAL
+
+CountRC_CF %>%
+  filter(n_RelatedControls > 1) %>%
+  ggplot(aes(reorder(`Control Family`, -n_RelatedControls), n_RelatedControls)) +
+    geom_point() +
+    #geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
+    ggtitle("Number of Related Controls for each Control Family") +
+    xlab("Top 16 Control Family") + 
+    ylab("Number of Related Controls")
+```
+
+
+**5. Most important Related Controls - by co-occurence** 
+MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX 
+
+
+**6. Most important Control - by count of Related Controls and co-occurrence**  SHOULD BE REMOVED SINCE IT IS THE SAME AS ANALYSIS 2
+```{r}
+#By count of related controls 
+CountCE <- HighControls3 %>%
+  group_by(`Combined`) %>%
+  summarise(n_ControlEnhancements = n()) %>%
+  arrange(desc(n_ControlEnhancements))
+
+CountCE
+
+#TESTING
+
+#Number of Related Controls when Main Control = "AU-6" and Combined = "AU-6-0"? 
+#Answer = 28
+HighControls3 %>%
+  filter(`Main Control` == 'AU-6', 
+         `Combined` == 'AU-6-0')
+
+#VISUAL
+
+CountCE %>%
+  filter(n_ControlEnhancements >= 15) %>%
+  ggplot(aes(reorder(`Combined`, -n_ControlEnhancements), n_ControlEnhancements)) +
+    geom_bar(stat = "identity") +
+    #geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
+    ggtitle("Number of Related Controls for each Control") +
+    xlab("Top 16 Controls") + 
+    ylab("Number of Related Controls")
+
+#################################################################################################
+
+#By co-occurence
+```
+
+**Most important Control Families - by count of Related Controls / ratio of Controls** 
+```{r}
+#By count of Related Controls 
+CountCF <- HighControls3 %>%
+  group_by(`Control Family`) %>%
+  summarise(n_ControlFamily = n()) %>%
+  arrange(desc(n_ControlFamily))
+
+CountCF
+
+#TESTING
+
+#Number of Related Controls when Control Family = "AC"? 
+#Answer = 162
+Controls4 %>%
+  filter(`Control Family` == 'AC')
+
+#VISUAL
+
+CountCF %>%
+  #filter(n_ControlFamily >= 15) %>%
+  ggplot(aes(reorder(`Control Family`, -n_ControlFamily), n_ControlFamily)) +
+    geom_bar(stat = "identity") +
+    #geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
+    ggtitle("Number of Related Controls for each Control Family") +
+    xlab("Control Families") + 
+    ylab("Number of Related Controls")
+
+#################################################################################################
+
+#By ratio of Controls 
+CountCFRatio <- HighControls3 %>%
+  mutate(n_TotalControls = n_distinct(`Combined`)) %>%
+  group_by(`Control Family`) %>%
+  mutate(n_Controls_by_Fam = n_distinct(`Combined`),
+         Ratio_Controls = n_Controls_by_Fam/n_TotalControls) %>% 
+  arrange(desc(Ratio_Controls))
+
+CountCFRatio
+
+#TESTING
+
+#Ratio of controls when Control Family = "AC"? 
+#Answer = 162
+HighControls3 %>%
+  filter(`Control Family` == 'AC')
+
+#VISUAL
+
+CountCF %>%
+  #filter(n_ControlFamily >= 15) %>%
+  ggplot(aes(reorder(`Control Family`, -n_ControlFamily), n_ControlFamily)) +
+    geom_bar(stat = "identity") +
+    #geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
+    ggtitle("Number of Related Controls for each Control Family") +
+    xlab("Control Families") + 
+    ylab("Number of Related Controls")
+```
