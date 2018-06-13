@@ -37,6 +37,9 @@ Think of the first sheet as granular detail to the second spreadsheet.
 #Data Cleaning  
   
 ```{r}
+#The following path is for Eugene Hwang
+#Controls <- read_excel("/Users/eugenehwang/Documents/FedRAMP/Data/800-53 subcontrol relations v2.xlsx")
+
 Controls <- read_excel("~/Desktop/800-53/800-53 subcontrol relations.xlsx")
 head(Controls)
 ```
