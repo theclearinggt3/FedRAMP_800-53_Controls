@@ -3,6 +3,12 @@ title: "800-53 Controls"
 output: pdf_document
 ---
 
+---
+If you do not have packages installed, uncomment the following installations and install the packages.
+#install.packages("readxl")
+#install.packages("tidyverse")
+#install.packages("ggplot2")
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
