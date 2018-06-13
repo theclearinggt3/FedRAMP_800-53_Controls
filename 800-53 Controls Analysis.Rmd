@@ -3,6 +3,13 @@ title: "800-53 Controls"
 output: pdf_document
 ---
 
+#If packages are not installed on your computer, need to uncomment and install the following packages. 
+#install.packages("readxl")
+#install.packages("readr")
+#install.packages("tidyverse")
+#install.packages("ggplot2")
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
@@ -31,6 +38,9 @@ Think of the first sheet as granular detail to the second spreadsheet.
 
 Reading in the data set. It is the third version, last edited on June 13th. 
 ```{r}
+#File path for Eugene Hwang
+#Controls <- read_excel("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/800-53 subcontrol relations.xlsx")
+
 Controls <- read_excel("~/Desktop/The Clearing/800-53 subcontrol relations v3.xlsx")
 head(Controls)
 ```
