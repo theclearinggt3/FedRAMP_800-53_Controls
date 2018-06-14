@@ -390,7 +390,7 @@ write_csv(CountCFRatio, "CountCFRatio.csv") #exporting CountCFRatio into a csv f
 ```
 
 
-**8. Network Analysis** 
+**8a. Network Analysis - Gephi** 
 
 #Create Node Table
 Gephi_node <- distinct(HighControls3,Combined)
@@ -409,19 +409,49 @@ write_csv(Gephi_node, "Gephi_node.csv") #exporting the Node file into a csv file
 
 write_csv(Gephi_edges, "Gephi_edges.csv") #exporting the Edge file into a csv file called Gephi_edges.csv into your working directory you set earlier.
 
+**8b. Network Analysis - iGraph** 
 
+#Create Node Table
+HighControls3_eh <- HighControls3
 
+names(HighControls3_eh) <- c("Control_Family","Main_Control","Combined","Related_Controls")
 
+Nodes_temp_MC <- distinct(HighControls3_eh, Main_Control)
+names(Nodes_temp_MC)<- c("id")
 
+Nodes_temp_RC <- distinct(HighControls3_eh, Related_Controls)
+names(Nodes_temp_RC)<- c("id")
 
+Nodes <- distinct(rbind(Nodes_temp_MC,Nodes_temp_RC),id)
+rm(Nodes_temp_MC)
+rm(Nodes_temp_RC)
 
+#Create Edges Table
+Edges <- select(HighControls3_eh, Main_Control, Related_Controls)
 
+#Renaming columns to Source and Target
+names(Edges) <- c("from","to")
 
+#Turning Networks into igraph objects
+net <- graph_from_data_frame(d=Edges, vertices=Nodes, directed=T) 
 
+#Nodes and Edges
+E(net)       # The edges of the "net" object
+V(net)       # The vertices of the "net" object
 
+#Plotting graph
+plot(net, edge.arrow.size=.2, edge.curved=0,
+     vertex.color="orange", vertex.frame.color="#555555",
+     vertex.label=V(net)$media, vertex.label.color="black",
+     vertex.label.cex=.7) 
+     
+#Transitivity
+# A measure of social process such that friends of friends will become friends. A high transitivity measure indicates a tightly
+# knit collaborative environment (clique), while a low transitivity measure indicates that neighboring researchers do not collaborate
+# with each other (star).
 
-
-
+transitivity(net, vids = "SC-26", type="local")
+transitivity(net, type="local")
 
 
 
