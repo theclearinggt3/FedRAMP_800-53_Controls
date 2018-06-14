@@ -8,6 +8,7 @@ output: pdf_document
 #install.packages("readr")
 #install.packages("tidyverse")
 #install.packages("ggplot2")
+install.packages("igraph")
 
 
 ```{r setup, include=FALSE}
@@ -16,6 +17,7 @@ library(readxl)
 library(readr)
 library(tidyverse)
 library(ggplot2)
+library(igraph)
 ```
 
 ##1. 800-53 subcontrol relations
@@ -40,6 +42,14 @@ Reading in the data set. It is the third version, last edited on June 13th.
 ```{r}
 #File path for Eugene Hwang
 #Controls <- read_excel("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/800-53 subcontrol relations.xlsx")
+
+#Set working directory path
+#setwd("/Users/eugenehwang/Documents/FedRAMP/Data")
+setwd("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls")
+
+#Get working directory path
+getwd()
+
 
 Controls <- read_excel("~/Desktop/The Clearing/800-53 subcontrol relations v3.xlsx")
 head(Controls)
@@ -378,3 +388,42 @@ write_csv(CountCFRatio, "CountCFRatio.csv") #exporting CountCFRatio into a csv f
 #    xlab("Control Families") + 
 #    ylab("Number of Related Controls")
 ```
+
+
+**8. Network Analysis** 
+
+#Create Node Table
+Gephi_node <- distinct(HighControls3,Combined)
+
+#Renaming columns to ID
+names(Gephi_node) <- c("ID")
+
+#Create Edges Table
+Gephi_edges <- select(HighControls3, Combined, "Related Controls")
+
+#Renaming columns to Source and Target
+names(Gephi_edges) <- c("Source","Target")
+
+#Write to CSV
+write_csv(Gephi_node, "Gephi_node.csv") #exporting the Node file into a csv file called Gephi_node.csv into your working directory you set earlier.
+
+write_csv(Gephi_edges, "Gephi_edges.csv") #exporting the Edge file into a csv file called Gephi_edges.csv into your working directory you set earlier.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
