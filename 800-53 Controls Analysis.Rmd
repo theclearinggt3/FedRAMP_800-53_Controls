@@ -408,9 +408,10 @@ names(Gephi_edges) <- c("Source","Target")
 write_csv(Gephi_node, "Gephi_node.csv") #exporting the Node file into a csv file called Gephi_node.csv into your working directory you set earlier.
 
 write_csv(Gephi_edges, "Gephi_edges.csv") #exporting the Edge file into a csv file called Gephi_edges.csv into your working directory you set earlier.
+```
 
 **8b. Network Analysis - iGraph** 
-
+```{r}
 #Create Node Table
 HighControls3_eh <- HighControls3
 
