@@ -391,7 +391,7 @@ write_csv(CountCFRatio, "CountCFRatio.csv") #exporting CountCFRatio into a csv f
 
 
 **8a. Network Analysis - Gephi** 
-
+```{r}
 #Create Node Table
 Gephi_node <- distinct(HighControls3,Combined)
 
@@ -452,7 +452,7 @@ plot(net, edge.arrow.size=.2, edge.curved=0,
 
 transitivity(net, vids = "SC-26", type="local")
 transitivity(net, type="local")
-
+```
 
 
 
