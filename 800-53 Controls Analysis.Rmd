@@ -423,15 +423,30 @@ names(Nodes_temp_MC)<- c("id")
 Nodes_temp_RC <- distinct(HighControls3_eh, Related_Controls)
 names(Nodes_temp_RC)<- c("id")
 
-Nodes <- distinct(rbind(Nodes_temp_MC,Nodes_temp_RC),id)
+#Selecting disctinct Nodes
+Nodes_temp_wo_name <- distinct(rbind(Nodes_temp_MC,Nodes_temp_RC),id)
+
+#Adding Name (labels)
+Nodes = cbind(Nodes_temp_wo_name,Name=rep(Nodes_temp_wo_name$id))
+
+#Delete temp tables
 rm(Nodes_temp_MC)
 rm(Nodes_temp_RC)
+rm(Nodes_temp_wo_name)
+
+#Write to CSV
+write_csv(Nodes, "Nodes.csv") #exporting the Node file into a csv file called Nodes.csv into your working directory you set earlier.
+
+#***
 
 #Create Edges Table
 Edges <- select(HighControls3_eh, Main_Control, Related_Controls)
 
 #Renaming columns to Source and Target
 names(Edges) <- c("from","to")
+
+#Write to CSV
+write_csv(Edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
 
 #Turning Networks into igraph objects
 net <- graph_from_data_frame(d=Edges, vertices=Nodes, directed=T) 
