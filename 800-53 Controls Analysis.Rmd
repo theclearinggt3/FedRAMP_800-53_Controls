@@ -470,6 +470,39 @@ transitivity(net, vids = "SC-26", type="local")
 transitivity(net, type="local")
 ```
 
+**9. Bar Chart** 
+
+Control_High_Counts_by_Family <- Controls %>%
+  filter(High == "Y") %>%
+  group_by(Family) %>%
+  summarise(n=n())
+  
+
+Control_High_Counts_by_Family %>%
+  filter(High == "Y") %>%
+  group_by(test_vec) %>%
+  summarise(n = n())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
