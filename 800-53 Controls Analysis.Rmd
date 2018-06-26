@@ -557,7 +557,7 @@ Nodes <- Nodes %>%
   select (Main_Control, Name, Control_Name, Control_Family, Family_Name) %>%
   rename("Id" = Main_Control) 
 
-#Write to CSV
+#Write to CSV tbd
 write_csv(Nodes, "Nodes.csv") #exporting the Node file into a csv file called Nodes.csv into your working directory you set earlier.
 
 #***~***~***
