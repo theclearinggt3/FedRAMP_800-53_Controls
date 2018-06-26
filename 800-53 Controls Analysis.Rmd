@@ -9,6 +9,7 @@ output: pdf_document
 #install.packages("tidyverse")
 #install.packages("ggplot2")
 #install.packages("igraph")
+install.packages("dplyr")
 #install.packages("plyr")
 #install.packages("sqldf")
 
@@ -20,8 +21,8 @@ library(readr)
 library(tidyverse)
 library(ggplot2)
 library(igraph)
-library(plyr)
-library(sqldf)
+#library(plyr)
+#library(sqldf)
 
 
 ```
@@ -400,9 +401,12 @@ write_csv(CountCFRatio, "CountCFRatio.csv") #exporting CountCFRatio into a csv f
 
 **Selecting only the columns needed and renaming columns with underscore **
 ```{r}
-names(Controls) <- c("Control_Family","Family_Name","Control_Name", "Main_Control","Control_Enhancement_Name", "Control_Enhancement","Combined","Related_Controls","Low","Low_2","Medium","Medium_2","High","High_2","Priority","Impact")
 
-Gephi_Controls <- Controls %>%
+Controls_mod <- Controls
+
+names(Controls_mod) <- c("Control_Family","Family_Name","Control_Name", "Main_Control","Control_Enhancement_Name", "Control_Enhancement","Combined","Related_Controls","Low","Low_2","Medium","Medium_2","High","High_2","Priority","Impact")
+
+Gephi_Controls <- Controls_mod %>%
   filter(High == "Y") %>% #filtering to High Baseline
   select(Control_Family, Family_Name, Main_Control, Control_Name, Control_Enhancement, Combined, Related_Controls)
          #,Low, Medium, High, Impact) 
@@ -527,11 +531,13 @@ Gephi_Controls4 <- Gephi_Controls1 %>%
 Gephi_Controls5 <- unique(Gephi_Controls4)
 
 #This provideds a count "Weight" on the duplicates
-Gephi_Controls6 <- ddply(Gephi_Controls4,.(Control_Family, Family_Name, Main_Control, Control_Name, Related_Controls),nrow) #%>% 
-  #rename(V1 = Weight) %>% 
-  #arrange(desc(V1))
+Gephi_Controls6 <- Gephi_Controls4 %>%
+  group_by(Control_Family, Family_Name, Main_Control, Control_Name, Related_Controls) %>%
+  summarise(n = n()) %>%
+  rename("Weight"=n) %>%
+  #arrange(desc(Weight))
 
-Gephi_Controls6 <- rename(Gephi_Controls6, c("V1" = "Weight"))
+
 ```
 
 
