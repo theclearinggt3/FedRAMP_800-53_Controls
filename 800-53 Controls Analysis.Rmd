@@ -9,7 +9,7 @@ output: pdf_document
 #install.packages("tidyverse")
 #install.packages("ggplot2")
 #install.packages("igraph")
-install.packages("dplyr")
+#install.packages("dplyr")
 #install.packages("plyr")
 #install.packages("sqldf")
 
@@ -21,10 +21,7 @@ library(readr)
 library(tidyverse)
 library(ggplot2)
 library(igraph)
-#library(plyr)
-#library(sqldf)
-
-
+library(dplyr)
 ```
 
 ##1. 800-53 subcontrol relations
@@ -397,22 +394,24 @@ write_csv(CountCFRatio, "CountCFRatio.csv") #exporting CountCFRatio into a csv f
 ```
 
 
-**Eugene's Data Cleaning for Gephi**
-
-**Selecting only the columns needed and renaming columns with underscore **
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Eugene's Data Cleaning for Gephi##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
 ```{r}
-
+#**Selecting only the columns needed and renaming columns with underscore **
 Controls_mod <- Controls
 
-names(Controls_mod) <- c("Control_Family","Family_Name","Control_Name", "Main_Control","Control_Enhancement_Name", "Control_Enhancement","Combined","Related_Controls","Low","Low_2","Medium","Medium_2","High","High_2","Priority","Impact")
+names(Controls_mod) <- c("Control_Family","Family_Name","Control_Name", "Main_Control","Control_Enhancement_Name", "Control_Enhancement","Combined","Related_Controls","Low","Low_1","Tailoring_Action","Medium","Medium_1","High","High_1","Priority","Impact")
 
+#**Only looking at High Impact Controls
 Gephi_Controls <- Controls_mod %>%
   filter(High == "Y") %>% #filtering to High Baseline
   select(Control_Family, Family_Name, Main_Control, Control_Name, Control_Enhancement, Combined, Related_Controls)
-         #,Low, Medium, High, Impact) 
+         #,Low, Medium, High, Impact, Tailoring_Action) 
 ```
 
-**Spreading Related Controls into different columns. **
+##Spreading Related Controls into different columns.
+**Gephi_Controls1**
 ```{r}
 Gephi_Controls1 <- Gephi_Controls %>%
   select(-Control_Enhancement) %>%
@@ -450,7 +449,8 @@ Gephi_Controls1 <- Gephi_Controls %>%
 
 ```
 
-**Spreading Related Control into different columns and gathering the control enhancement by main controls (removing the control enhancement detail).**
+##Spreading Related Control into different columns and gathering the control enhancement by main controls (removing the control enhancement detail).
+**Gephi_Controls2**
 ```{r warning = FALSE}
 Gephi_Controls2 <- Gephi_Controls %>%
   select(-Control_Enhancement, -Combined) %>%
@@ -512,7 +512,8 @@ Gephi_Controls2 <- Gephi_Controls %>%
          Related_Control_37 = str_trim(Related_Control_37, side = "both")) #removing empty spaces in those variable's values. 
 ```    
 
-##Similar to Gephi_Controls2 but reformatted to make it easier to manipulate. 
+##Similar to Gephi_Controls2 but reformatted to make it easier to manipulate.
+**Gephi_Controls4**
 ```{r}
 Gephi_Controls4 <- Gephi_Controls1 %>%
   select (-Combined) %>%
@@ -526,89 +527,54 @@ Gephi_Controls4 <- Gephi_Controls1 %>%
 ```
 
 ##Removes duplicates if the main control has two of the same related controls
+**Gephi_Controls5 & Gephi_Controls6**
 ```{r}
 #This removes 36 duplicates (ex. AU-6 & AU-12, AC-18 & AC-19)
 Gephi_Controls5 <- unique(Gephi_Controls4)
 
-#This provideds a count "Weight" on the duplicates
+#This provideds a new column -- "Weight" -- counts on the duplicates
 Gephi_Controls6 <- Gephi_Controls4 %>%
+  # (Main_Control, Control_Name, Control_Family, Family_Name, Related_Controls )
   group_by(Control_Family, Family_Name, Main_Control, Control_Name, Related_Controls) %>%
   summarise(n = n()) %>%
-  rename("Weight"=n) %>%
+  rename("Weight"=n) #%>%
   #arrange(desc(Weight))
 
-
 ```
 
-
-#write_csv(Gephi_Controls4, "Gephi_Controls4.csv") #exporting the Node file into a csv file called Nodes.csv into your working directory you set earlier.
-
-```
-
-**8a. Network Analysis - Gephi** 
+##8. Network Analysis
+**Creating Node and Edge tables** 
 ```{r}
 #Create Node Table
-Gephi_node <- distinct(HighControls3,Combined)
+#Capturing distinct Main Controls
+Nodes <- distinct(Controls_mod, Control_Family, Family_Name, Main_Control, Control_Name)
 
-#Renaming columns to ID
-names(Gephi_node) <- c("ID")
+#Adding Name column  
+Nodes["Name"] = Nodes$Main_Control 
 
-#Create Edges Table
-Gephi_edges <- select(HighControls3, Combined, "Related Controls")
-
-#Renaming columns to Source and Target
-names(Gephi_edges) <- c("Source","Target")
-
-#Write to CSV
-write_csv(Gephi_node, "Gephi_node.csv") #exporting the Node file into a csv file called Gephi_node.csv into your working directory you set earlier.
-
-write_csv(Gephi_edges, "Gephi_edges.csv") #exporting the Edge file into a csv file called Gephi_edges.csv into your working directory you set earlier.
-```
-
-**8b. Network Analysis - iGraph** 
-```{r}
-#Create Node Table
-#Nodes_temp_MC <- distinct(Gephi_Controls6, Main_Control)
-#names(Nodes_temp_MC)<- c("ID")
-
-#Nodes_temp_RC <- distinct(Gephi_Controls6, Related_Controls)
-#names(Nodes_temp_RC)<- c("ID")
-
-#Selecting disctinct Nodes
-#Nodes_temp_wo_name <- distinct(rbind(Nodes_temp_MC,Nodes_temp_RC),ID)
-
-#Adding Name (labels)
-#Nodes = cbind(Nodes_temp_wo_name,Name=rep(Nodes_temp_wo_name$ID))
-
-#Delete temp tables
-#rm(Nodes_temp_MC)
-#rm(Nodes_temp_RC)
-#rm(Nodes_temp_wo_name)
-
-Nodes <- distinct(Controls, Control_Family, Family_Name, Main_Control, Control_Name)
-  
-Nodes["Name"] <- Nodes$Main_Control 
-
+#Reordering and renaming columns
 Nodes <- Nodes %>%
-  select (Main_Control, Name, Control_Name, Control_Family, Family_Name) #%>%
-  #rename(Main_Control = Id) 
-
-Nodes <- rename(Nodes, c("Main_Control" = "Id"))
+  select (Main_Control, Name, Control_Name, Control_Family, Family_Name) %>%
+  rename("Id" = Main_Control) 
 
 #Write to CSV
 write_csv(Nodes, "Nodes.csv") #exporting the Node file into a csv file called Nodes.csv into your working directory you set earlier.
 
-#***
-
+#***~***~***
 #Create Edges Table
-Edges <- select(Gephi_Controls6, Main_Control, Related_Controls, Weight)
-
-#Renaming columns to Source and Target
-names(Edges) <- c("Source","Target", "Weight")
+Edges <- Gephi_Controls4 %>%
+  group_by(Main_Control, Related_Controls) %>%
+  summarise(n = n()) %>%
+  rename(Source = Main_Control, Target = Related_Controls, Weight=n) #%>%
+  #arrange(desc(Weight))
 
 #Write to CSV
 write_csv(Edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
+```
 
+**8. Network Analysis - iGraph** 
+**Needs to be revisited and updated with new tables**
+```{r}
 #Turning Networks into igraph objects
 net <- graph_from_data_frame(d=Edges, vertices=Nodes, directed=T) 
 
@@ -630,19 +596,6 @@ plot(net, edge.arrow.size=.2, edge.curved=0,
 transitivity(net, vids = "SC-26", type="local")
 transitivity(net, type="local")
 ```
-
-**9. Bar Chart** 
-
-Control_High_Counts_by_Family <- Controls %>%
-  filter(High == "Y") %>%
-  group_by(Family) %>%
-  summarise(n=n())
-  
-
-Control_High_Counts_by_Family %>%
-  filter(High == "Y") %>%
-  group_by(test_vec) %>%
-  summarise(n = n())
 
 
 
