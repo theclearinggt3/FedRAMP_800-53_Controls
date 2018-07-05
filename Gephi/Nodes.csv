@@ -1,4 +1,4 @@
-Id,Name,Control_Name,Control_Family,Family_Name
+Id,Label,Control_Name,Control_Family,Family_Name
 AC-1,AC-1,ACCESS CONTROL POLICY AND PROCEDURES,AC,Access Control
 AC-2,AC-2,ACCOUNT MANAGEMENT,AC,Access Control
 AC-3,AC-3,ACCESS ENFORCEMENT,AC,Access Control
