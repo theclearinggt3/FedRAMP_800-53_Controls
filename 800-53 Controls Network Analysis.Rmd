@@ -1,0 +1,622 @@
+---
+title: "800-53 Controls"
+output: pdf_document
+---
+
+#If packages are not installed on your computer, need to uncomment and install the following packages. 
+#install.packages("readxl")
+#install.packages("readr")
+#install.packages("tidyverse")
+#install.packages("ggplot2")
+#install.packages("igraph")
+#install.packages("dplyr")
+#install.packages("plyr")
+#install.packages("sqldf")
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(igraph)
+library(dplyr)
+```
+
+##1. 800-53 subcontrol relations
+This spreadsheet is a web-scrape of 800-53 detail for the FedRAMP High Baseline (~170 controls) with sub-control detail. Column A displays the main control. Column B displays the subcontrol (or enhancement). (Example: Row 2 is AC-2(4) which is an individual subcontrol of AC-2, so on and so forth). Column C shows the related controls for each subcontrol.
+
+Could you work with this data set so that it can be more easily manipulated and come up with any detail you can surmise. Things that would be great to understand are:
+- Count (#) of related controls for each subcontrol
+- Most important related controls - by count / frequency
+- Most important related controls - by co-occurence 
+- Most important subcontrols - by count of related controls and co-occurrence
+- Most important control families - by count of related controls / ratio of subcontrols
+
+I'm going to give you creative license here. If anything doesnt make sense, feel free to ask Dan or I but don't get too into the weeds.
+
+##2. controls_4.xlsx
+This is a spreadsheet I have had some fun with already. Could you help organize the first worksheet which shows the related controls for each control in the high baseline. Column A shows the control. Columns B --> AB show the related controls for that control. 
+
+Think of the first sheet as granular detail to the second spreadsheet. 
+
+
+Reading in the data set. It is the third version, last edited on June 13th. 
+```{r}
+#File path for Eugene Hwang
+#Controls <- read_excel("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/800-53 subcontrol relations.xlsx")
+
+#Set working directory path
+#setwd("/Users/eugenehwang/Documents/FedRAMP/Data")
+setwd("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls")
+
+#Get working directory path
+getwd()
+
+
+Controls <- read_excel("~/Desktop/The Clearing/800-53 subcontrol relations v3.xlsx")
+head(Controls)
+```
+
+
+#Data Cleaning  
+
+Filtering through the data set to analyze the high baseline controls. 
+```{r}
+HighControls <- Controls %>%
+  filter(High == "Y") %>% #filtering to High Baseline 
+  rename(`Control Family` = Family) %>% #renaming the Family variable to Control Family
+  select(`Control Family`, `Main Control`, `Control Enhancement`, Combined, `Related Controls`) 
+
+head(HighControls)
+```
+
+##High Control 1
+    
+Spreading Related Controls into different columns. 
+```{r warning = FALSE}
+HighControls1 <- HighControls %>%
+  select(-`Control Enhancement`) %>%
+  separate('Related Controls', paste("Related Control", 1:28, sep = " "),
+           sep = ",", 
+           extra = "warn") %>% #spreading Related Controls into different columns 
+  mutate(`Related Control 1` = str_trim(`Related Control 1`, side = "both"),
+         `Related Control 2` = str_trim(`Related Control 2`, side = "both"),
+         `Related Control 3` = str_trim(`Related Control 3`, side = "both"),
+         `Related Control 4` = str_trim(`Related Control 4`, side = "both"),
+         `Related Control 5` = str_trim(`Related Control 5`, side = "both"),
+         `Related Control 6` = str_trim(`Related Control 6`, side = "both"),
+         `Related Control 7` = str_trim(`Related Control 7`, side = "both"),
+         `Related Control 8` = str_trim(`Related Control 8`, side = "both"),
+         `Related Control 9` = str_trim(`Related Control 9`, side = "both"),
+         `Related Control 10` = str_trim(`Related Control 10`, side = "both"),
+         `Related Control 11` = str_trim(`Related Control 11`, side = "both"),
+         `Related Control 12` = str_trim(`Related Control 12`, side = "both"),
+         `Related Control 13` = str_trim(`Related Control 13`, side = "both"),
+         `Related Control 14` = str_trim(`Related Control 14`, side = "both"),
+         `Related Control 15` = str_trim(`Related Control 15`, side = "both"),
+         `Related Control 16` = str_trim(`Related Control 16`, side = "both"),
+         `Related Control 17` = str_trim(`Related Control 17`, side = "both"),
+         `Related Control 18` = str_trim(`Related Control 18`, side = "both"),
+         `Related Control 19` = str_trim(`Related Control 19`, side = "both"),
+         `Related Control 20` = str_trim(`Related Control 20`, side = "both"),
+         `Related Control 21` = str_trim(`Related Control 21`, side = "both"),
+         `Related Control 22` = str_trim(`Related Control 22`, side = "both"),
+         `Related Control 23` = str_trim(`Related Control 23`, side = "both"),
+         `Related Control 24` = str_trim(`Related Control 24`, side = "both"),
+         `Related Control 25` = str_trim(`Related Control 25`, side = "both"),
+         `Related Control 26` = str_trim(`Related Control 26`, side = "both"),
+         `Related Control 27` = str_trim(`Related Control 27`, side = "both"),
+         `Related Control 28` = str_trim(`Related Control 28`, side = "both")) #removing empty spaces in those variable's values. Not the smartest way of coding but does the job. 
+
+head(HighControls1)
+```   
+   
+##High Controls 2   
+    
+Spreading Related Control into different columns and gathering the control enhancement by main controls (removing the control enhancement detail). 
+```{r warning = FALSE}
+HighControls2 <- HighControls %>%
+  select(-`Control Enhancement`, -Combined) %>%
+  separate(`Related Controls`, paste("Related Control", 1:28, sep = " "),
+           sep = ",", 
+           extra = "warn") %>% #spreading Related Controls into different columns 
+  gather(AllRelatedControls, Value, 
+         `Related Control 1`:`Related Control 28`, na.rm = TRUE) %>%
+  group_by(`Main Control`) %>%
+  mutate(AllRelatedControls2 = paste("Related Control", 1:n(), sep = " ")) %>% 
+  ungroup() %>%
+  select(-AllRelatedControls) %>%
+  spread(AllRelatedControls2, Value, convert = TRUE) %>% 
+  select(`Control Family`, `Main Control`, `Related Control 1`, `Related Control 2`, `Related Control 3`, 
+         `Related Control 4`, `Related Control 5`, `Related Control 6`, `Related Control 7`, `Related Control 8`, 
+         `Related Control 9`, `Related Control 10`, `Related Control 11`, `Related Control 12`, 
+         `Related Control 13`, `Related Control 14`, `Related Control 15`, `Related Control 16`, 
+         `Related Control 17`, `Related Control 18`, `Related Control 19`, `Related Control 20`, 
+         `Related Control 21`, `Related Control 22`, `Related Control 23`, `Related Control 24`, 
+         `Related Control 25`, `Related Control 26`, `Related Control 27`, `Related Control 28`, 
+         `Related Control 29`, `Related Control 30`, `Related Control 31`, `Related Control 32`, 
+         `Related Control 33`, `Related Control 34`, `Related Control 35`, `Related Control 36`, 
+         `Related Control 37`) %>% #reording the variables in the table 
+    mutate(`Related Control 1` = str_trim(`Related Control 1`, side = "both"),
+         `Related Control 2` = str_trim(`Related Control 2`, side = "both"),
+         `Related Control 3` = str_trim(`Related Control 3`, side = "both"),
+         `Related Control 4` = str_trim(`Related Control 4`, side = "both"),
+         `Related Control 5` = str_trim(`Related Control 5`, side = "both"),
+         `Related Control 6` = str_trim(`Related Control 6`, side = "both"),
+         `Related Control 7` = str_trim(`Related Control 7`, side = "both"),
+         `Related Control 8` = str_trim(`Related Control 8`, side = "both"),
+         `Related Control 9` = str_trim(`Related Control 9`, side = "both"),
+         `Related Control 10` = str_trim(`Related Control 10`, side = "both"),
+         `Related Control 11` = str_trim(`Related Control 11`, side = "both"),
+         `Related Control 12` = str_trim(`Related Control 12`, side = "both"),
+         `Related Control 13` = str_trim(`Related Control 13`, side = "both"),
+         `Related Control 14` = str_trim(`Related Control 14`, side = "both"),
+         `Related Control 15` = str_trim(`Related Control 15`, side = "both"),
+         `Related Control 16` = str_trim(`Related Control 16`, side = "both"),
+         `Related Control 17` = str_trim(`Related Control 17`, side = "both"),
+         `Related Control 18` = str_trim(`Related Control 18`, side = "both"),
+         `Related Control 19` = str_trim(`Related Control 19`, side = "both"),
+         `Related Control 20` = str_trim(`Related Control 20`, side = "both"),
+         `Related Control 21` = str_trim(`Related Control 21`, side = "both"),
+         `Related Control 22` = str_trim(`Related Control 22`, side = "both"),
+         `Related Control 23` = str_trim(`Related Control 23`, side = "both"),
+         `Related Control 24` = str_trim(`Related Control 24`, side = "both"),
+         `Related Control 25` = str_trim(`Related Control 25`, side = "both"),
+         `Related Control 26` = str_trim(`Related Control 26`, side = "both"),
+         `Related Control 27` = str_trim(`Related Control 27`, side = "both"),
+         `Related Control 28` = str_trim(`Related Control 28`, side = "both")) #removing empty spaces in those variable's values. Not the smartest way of coding but does the job.
+
+head(HighControls2)
+```    
+    
+##High Controls 3
+
+Similar to HighControls1 but reformatted to make it easier to read, manipulate, and analyze.
+```{r}
+HighControls3 <- HighControls1 %>%
+  gather(AllRelatedControls, Value, `Related Control 1`:`Related Control 28`, na.rm = TRUE) %>%
+  group_by(`Main Control`, `Combined`) %>%
+  mutate(AllRelatedControls2 = paste("Related Control", 1:n(), sep = " ")) %>%
+  rename(`Related Controls` = `Value`) %>%
+  select(-`AllRelatedControls`, -`AllRelatedControls2`) %>%
+  ungroup() %>%
+  arrange(`Main Control`, `Combined`) 
+
+head(HighControls3)
+```
+     
+##High Controls 4   
+      
+Similar to HighControls2 but reformatted to make it easier to manipulate. 
+```{r}
+HighControls4 <- HighControls1 %>%
+  select(-`Combined`) %>%
+  gather(AllRelatedControls, Value, `Related Control 1`:`Related Control 28`, na.rm = TRUE) %>%
+  group_by(`Main Control`) %>%
+  mutate(AllRelatedControls2 = paste("Related Control", 1:n(), sep = " ")) %>%
+  rename(`Related Controls` = `Value`) %>%
+  select(-`AllRelatedControls`, -`AllRelatedControls2`) %>%
+  ungroup() %>%
+  arrange(`Main Control`) 
+
+head(HighControls4)
+```
+    
+        
+#Data Analysis      
+   
+**1. Most important Related Controls - by count / frequency**
+```{r}
+CountRC <- HighControls3 %>%
+  group_by(`Related Controls`) %>%
+  summarise(n_RelatedControls = n()) %>%
+  arrange(desc(n_RelatedControls))
+
+head(CountRC)
+
+write_csv(CountRC, "CountRC.csv") #exporting CountRC into a csv file called CountRC.csv into your directory. 
+
+#TESTING
+
+#Number of times Related Controls = "AC-3" exists? 
+#Answer = 29
+HighControls3 %>%
+  filter(`Related Controls` == 'AC-3')    
+   
+#VISUAL
+
+CountRC %>%
+  filter(n_RelatedControls >= 10) %>%
+  ggplot(aes(reorder(`Related Controls`, -n_RelatedControls), n_RelatedControls)) + 
+  geom_bar(stat = "identity") + 
+  ggtitle("Most Important Related Controls based on Count") +
+    xlab("Top 21 Related Controls") + 
+    ylab("Number of Related Controls")
+```
+
+**2. Number of Related Controls for Control** 
+#Can also be considered as most important Controls - by count of Related Control
+```{r}
+
+CountRC_CE <- HighControls3 %>%
+  group_by(`Combined`) %>%
+  summarise(n_RelatedControls = n()) %>%
+  arrange(desc(n_RelatedControls))
+
+head(CountRC_CE)
+
+write_csv(CountRC_CE, "CountRC_CE.csv") #exporting CountRC_CE into a csv file called CountRC_CE.csv into your directory. 
+
+#TESTING
+
+#How many Related Controls are there when the Main Control = "AU-6" and the Control Enhancement = "0"? 
+#Answer = 28
+HighControls3 %>%
+  filter(`Combined` == 'AU-6-0')
+
+#VISUAL
+
+CountRC_CE %>%
+  filter(n_RelatedControls >= 15) %>%
+  ggplot(aes(reorder(`Combined`, -n_RelatedControls), n_RelatedControls)) +
+    geom_bar(stat = "identity") + 
+    ggtitle("Largest Amount of Related Controls for each Control") +
+    xlab("Top 11 Controls") + 
+    ylab("Number of Related Controls")
+```
+
+**3. Number of Related Controls for each Main Control** FIX VISUAL
+```{r}
+CountRC_MC <- HighControls3 %>%
+  group_by(`Main Control`, `Related Controls`) %>%
+  summarise(n_RelatedControls = n()) %>%
+  arrange(desc(n_RelatedControls))
+
+head(CountRC_MC)  
+  
+write_csv(CountRC_MC, "CountRC_MC.csv") #exporting CountRC_MC into a csv file called CountRC_MC.csv into your directory. 
+
+#TESTING
+
+#Number of Related Controls when Related Controls = "AU-12" and Main Control = "AU-6"? 
+#Answer = 4
+HighControls3 %>%
+  filter(`Related Controls` == 'AU-12', 
+         `Main Control` == 'AU-6')
+
+#VISUAL
+
+#CountRC_MC %>%
+#  filter(n_RelatedControls > 1) %>%
+#  ggplot(aes(reorder(`Main Control`, -n_RelatedControls), n_RelatedControls)) +
+#    geom_point() +
+#    geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
+#    ggtitle("Largest Amount of Related Controls for each Main Control") +
+#    xlab("Top 16 Main Controls") + 
+#    ylab("Number of Related Controls")
+```
+
+**4. Number of Related Controls for each Control Family** FIX VISUAL AND RECHECK ANALYSIS
+```{r}
+CountRC_CF <- HighControls3 %>%
+  group_by(`Control Family`, `Related Controls`) %>%
+  summarise(n_RelatedControls = n()) %>%
+  arrange(desc(n_RelatedControls))
+
+head(CountRC_CF)
+
+write_csv(CountRC_CF, "CountRC_CF.csv") #exporting CountRC_CF into a csv file called CountRC_CF.csv into your directory. 
+
+#TESTING
+
+#Number of Related Controls when Related Controls = "AC-3" and Control Family = "AC"? 
+#Answer = 11
+HighControls3 %>%
+  filter(`Related Controls` == 'AC-3', 
+         `Control Family` == 'AC')   
+  
+#VISUAL
+
+#CountRC_CF %>%
+#  filter(n_RelatedControls > 1) %>%
+#  ggplot(aes(reorder(`Control Family`, -n_RelatedControls), n_RelatedControls)) +
+#    geom_point() +
+#    geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
+#    ggtitle("Number of Related Controls for each Control Family") +
+#    xlab("Top 16 Control Family") + 
+#    ylab("Number of Related Controls")
+```    
+
+**5. Most important Related Controls - by co-occurence** 
+MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX 
+
+**6. Most important Controls - by co-occurrence** 
+MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX 
+
+**7. Most important Control Families - by count of Related Controls / ratio of Controls** MUST FINISH TESTING & VISUALS FOR RATIO
+```{r}
+##By count of Related Controls 
+CountCF <- HighControls3 %>%
+  group_by(`Control Family`) %>%
+  summarise(n_ControlFamily = n()) %>%
+  arrange(desc(n_ControlFamily))
+
+head(CountCF)
+
+write_csv(CountCF, "CountCF.csv") #exporting CountCF into a csv file called CountCF.csv into your directory. 
+
+#TESTING  
+    
+#Number of Related Controls when Control Family = "AC"? 
+#Answer = 162
+HighControls3 %>%
+  filter(`Control Family` == 'AC')
+
+#VISUAL
+
+CountCF %>%
+  #filter(n_ControlFamily >= 15) %>%
+  ggplot(aes(reorder(`Control Family`, -n_ControlFamily), n_ControlFamily)) +
+    geom_bar(stat = "identity") +
+    #geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
+    ggtitle("Number of Related Controls for each Control Family") +
+    xlab("Control Families") + 
+    ylab("Number of Related Controls")   
+   
+#################################################################################################
+
+##By ratio of Controls 
+CountCFRatio <- HighControls3 %>%
+  mutate(n_TotalControls = n_distinct(`Combined`)) %>%
+  group_by(`Control Family`) %>%
+  mutate(n_Controls_by_Fam = n_distinct(`Combined`),
+         Ratio_Controls = n_Controls_by_Fam/n_TotalControls) %>% 
+  arrange(desc(Ratio_Controls))
+
+head(CountCFRatio)
+
+write_csv(CountCFRatio, "CountCFRatio.csv") #exporting CountCFRatio into a csv file called CountCFRatio.csv into your directory. 
+
+#TESTING
+
+#VISUAL
+
+#CountCFRatio %>%
+#  filter(n_ControlFamily >= 15) %>%
+#  ggplot(aes(reorder(`Control Family`, -n_ControlFamily), n_ControlFamily)) +
+#    geom_bar(stat = "identity") +
+#    geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
+#    ggtitle("Number of Related Controls for each Control Family") +
+#    xlab("Control Families") + 
+#    ylab("Number of Related Controls")
+```
+
+
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Eugene's Data Cleaning for Gephi##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+```{r}
+#**Selecting only the columns needed and renaming columns with underscore **
+Controls_mod <- Controls
+
+names(Controls_mod) <- c("Control_Family","Family_Name","Control_Name", "Main_Control","Control_Enhancement_Name", "Control_Enhancement","Combined","Related_Controls","Low","Low_1","Tailoring_Action","Medium","Medium_1","High","High_1","Priority","Impact")
+
+#**Only looking at High Impact Controls
+Gephi_Controls <- Controls_mod %>%
+  filter(High == "Y") %>% #filtering to High Baseline
+  select(Control_Family, Family_Name, Main_Control, Control_Name, Control_Enhancement, Combined, Related_Controls)
+         #,Low, Medium, High, Impact, Tailoring_Action) 
+```
+
+##Spreading Related Controls into different columns.
+**Gephi_Controls1**
+```{r}
+Gephi_Controls1 <- Gephi_Controls %>%
+  select(-Control_Enhancement) %>%
+  separate(Related_Controls, paste("Related_Control", 1:28, sep = "_"),
+           sep = ",", 
+           extra = "warn") %>% #spreading Related Controls into different columns 
+  mutate(Related_Control_1 = str_trim(Related_Control_1, side = "both"),
+         Related_Control_2 = str_trim(Related_Control_2, side = "both"),
+         Related_Control_3 = str_trim(Related_Control_3, side = "both"),
+         Related_Control_4 = str_trim(Related_Control_4, side = "both"),
+         Related_Control_5 = str_trim(Related_Control_5, side = "both"),
+         Related_Control_6 = str_trim(Related_Control_6, side = "both"),
+         Related_Control_7 = str_trim(Related_Control_7, side = "both"),
+         Related_Control_8 = str_trim(Related_Control_8, side = "both"),
+         Related_Control_9 = str_trim(Related_Control_9, side = "both"),
+         Related_Control_10 = str_trim(Related_Control_10, side = "both"),
+         Related_Control_11 = str_trim(Related_Control_11, side = "both"),
+         Related_Control_12 = str_trim(Related_Control_12, side = "both"),
+         Related_Control_13 = str_trim(Related_Control_13, side = "both"),
+         Related_Control_14 = str_trim(Related_Control_14, side = "both"),
+         Related_Control_15 = str_trim(Related_Control_15, side = "both"),
+         Related_Control_16 = str_trim(Related_Control_16, side = "both"),
+         Related_Control_17 = str_trim(Related_Control_17, side = "both"),
+         Related_Control_18 = str_trim(Related_Control_18, side = "both"),
+         Related_Control_19 = str_trim(Related_Control_19, side = "both"),
+         Related_Control_20 = str_trim(Related_Control_20, side = "both"),
+         Related_Control_21 = str_trim(Related_Control_21, side = "both"),
+         Related_Control_22 = str_trim(Related_Control_22, side = "both"),
+         Related_Control_23 = str_trim(Related_Control_23, side = "both"),
+         Related_Control_24 = str_trim(Related_Control_24, side = "both"),
+         Related_Control_25 = str_trim(Related_Control_25, side = "both"),
+         Related_Control_26 = str_trim(Related_Control_26, side = "both"),
+         Related_Control_27 = str_trim(Related_Control_27, side = "both"),
+         Related_Control_28 = str_trim(Related_Control_28, side = "both")) #removing empty spaces in those variable's values. 
+
+```
+
+##Spreading Related Control into different columns and gathering the control enhancement by main controls (removing the control enhancement detail).
+**Gephi_Controls2**
+```{r warning = FALSE}
+Gephi_Controls2 <- Gephi_Controls %>%
+  select(-Control_Enhancement, -Combined) %>%
+  separate(Related_Controls, paste("Related_Control", 1:28, sep = "_"),
+           sep = ",", 
+           extra = "warn") %>% #spreading Related Controls into different columns
+  gather(AllRelatedControls, Value, 
+         Related_Control_1:Related_Control_28, na.rm = TRUE) %>%
+  group_by(Main_Control) %>%
+  mutate(AllRelatedControls2 = paste("Related_Control", 1:n(), sep = "_")) %>% 
+  ungroup() %>%
+  select(-AllRelatedControls) %>%
+  spread(AllRelatedControls2, Value, convert = TRUE) %>% 
+  select(Control_Family, Family_Name, Main_Control, Control_Name, #Low, Medium, High, Impact,
+         Related_Control_1, Related_Control_2, Related_Control_3, Related_Control_4, Related_Control_5,
+         Related_Control_6, Related_Control_7, Related_Control_8, Related_Control_9, Related_Control_10,
+         Related_Control_11, Related_Control_12, Related_Control_13, Related_Control_14, Related_Control_15,
+         Related_Control_16, Related_Control_17, Related_Control_18, Related_Control_19, Related_Control_20,
+         Related_Control_21, Related_Control_22, Related_Control_23, Related_Control_24, Related_Control_25,
+         Related_Control_26, Related_Control_27, Related_Control_28, Related_Control_29, Related_Control_30,
+         Related_Control_31, Related_Control_32, Related_Control_33, Related_Control_34, Related_Control_35,
+         Related_Control_36, Related_Control_37) %>% #reording the variables in the table 
+  mutate(Related_Control_1 = str_trim(Related_Control_1, side = "both"),
+         Related_Control_2 = str_trim(Related_Control_2, side = "both"),
+         Related_Control_3 = str_trim(Related_Control_3, side = "both"),
+         Related_Control_4 = str_trim(Related_Control_4, side = "both"),
+         Related_Control_5 = str_trim(Related_Control_5, side = "both"),
+         Related_Control_6 = str_trim(Related_Control_6, side = "both"),
+         Related_Control_7 = str_trim(Related_Control_7, side = "both"),
+         Related_Control_8 = str_trim(Related_Control_8, side = "both"),
+         Related_Control_9 = str_trim(Related_Control_9, side = "both"),
+         Related_Control_10 = str_trim(Related_Control_10, side = "both"),
+         Related_Control_11 = str_trim(Related_Control_11, side = "both"),
+         Related_Control_12 = str_trim(Related_Control_12, side = "both"),
+         Related_Control_13 = str_trim(Related_Control_13, side = "both"),
+         Related_Control_14 = str_trim(Related_Control_14, side = "both"),
+         Related_Control_15 = str_trim(Related_Control_15, side = "both"),
+         Related_Control_16 = str_trim(Related_Control_16, side = "both"),
+         Related_Control_17 = str_trim(Related_Control_17, side = "both"),
+         Related_Control_18 = str_trim(Related_Control_18, side = "both"),
+         Related_Control_19 = str_trim(Related_Control_19, side = "both"),
+         Related_Control_20 = str_trim(Related_Control_20, side = "both"),
+         Related_Control_21 = str_trim(Related_Control_21, side = "both"),
+         Related_Control_22 = str_trim(Related_Control_22, side = "both"),
+         Related_Control_23 = str_trim(Related_Control_23, side = "both"),
+         Related_Control_24 = str_trim(Related_Control_24, side = "both"),
+         Related_Control_25 = str_trim(Related_Control_25, side = "both"),
+         Related_Control_26 = str_trim(Related_Control_26, side = "both"),
+         Related_Control_27 = str_trim(Related_Control_27, side = "both"),
+         Related_Control_28 = str_trim(Related_Control_28, side = "both"),
+         Related_Control_29 = str_trim(Related_Control_29, side = "both"),
+         Related_Control_30 = str_trim(Related_Control_30, side = "both"),
+         Related_Control_31 = str_trim(Related_Control_31, side = "both"),
+         Related_Control_32 = str_trim(Related_Control_32, side = "both"),
+         Related_Control_33 = str_trim(Related_Control_33, side = "both"),
+         Related_Control_34 = str_trim(Related_Control_34, side = "both"),
+         Related_Control_35 = str_trim(Related_Control_35, side = "both"),
+         Related_Control_36 = str_trim(Related_Control_36, side = "both"),
+         Related_Control_37 = str_trim(Related_Control_37, side = "both")) #removing empty spaces in those variable's values. 
+```    
+
+##Similar to Gephi_Controls2 but reformatted to make it easier to manipulate.
+**Gephi_Controls4**
+```{r}
+Gephi_Controls4 <- Gephi_Controls1 %>%
+  select (-Combined) %>%
+  gather(AllRelatedControls, Value, Related_Control_1:Related_Control_28, na.rm = TRUE) %>%
+  group_by(Main_Control) %>%
+  mutate(AllRelatedControls2 = paste("Related_Control", 1:n(), sep = "_")) %>%
+  rename(Related_Controls = Value) %>%
+  select(-AllRelatedControls, -AllRelatedControls2) %>%
+  ungroup() %>%
+  arrange(Main_Control) 
+```
+
+##Removes duplicates if the main control has two of the same related controls
+**Gephi_Controls5 & Gephi_Controls6**
+```{r}
+#This removes 36 duplicates (ex. AU-6 & AU-12, AC-18 & AC-19)
+Gephi_Controls5 <- unique(Gephi_Controls4)
+
+#This provideds a new column -- "Weight" -- counts on the duplicates
+Gephi_Controls6 <- Gephi_Controls4 %>%
+  # (Main_Control, Control_Name, Control_Family, Family_Name, Related_Controls )
+  group_by(Control_Family, Family_Name, Main_Control, Control_Name, Related_Controls) %>%
+  summarise(n = n()) %>%
+  rename("Weight"=n) #%>%
+  #arrange(desc(Weight))
+
+```
+
+##8. Network Analysis
+**Creating Node and Edge tables** 
+```{r}
+#Create Node Table
+#Capturing distinct Main Controls
+Nodes <- distinct(Controls_mod, Control_Family, Family_Name, Main_Control, Control_Name)
+
+#Adding Label column  
+Nodes["Label"] = Nodes$Main_Control 
+
+#Reordering and renaming columns
+Nodes <- Nodes %>%
+  select (Main_Control, Label, Control_Name, Control_Family, Family_Name) %>%
+  rename("Id" = Main_Control) 
+
+#Write to CSV 
+write_csv(Nodes, "Nodes.csv") #exporting the Node file into a csv file called Nodes.csv into your working directory you set earlier.
+
+#***~***~***
+#Create Edges Table
+Edges <- Gephi_Controls4 %>%
+  group_by(Main_Control, Related_Controls) %>%
+  summarise(n = n()) %>%
+  rename(Source = Main_Control, Target = Related_Controls, Weight=n) #%>%
+  #arrange(desc(Weight))
+
+#Write to CSV
+write_csv(Edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
+```
+
+**8. Network Analysis - iGraph** 
+**Needs to be revisited and updated with new tables**
+```{r}
+#Turning Networks into igraph objects
+net <- graph_from_data_frame(d=Edges, vertices=Nodes, directed=T) 
+
+#Nodes and Edges
+E(net)       # The edges of the "net" object
+V(net)       # The vertices of the "net" object
+
+#Plotting graph
+plot(net, edge.arrow.size=.2, edge.curved=0,
+     vertex.color="orange", vertex.frame.color="#555555",
+     vertex.label=V(net)$media, vertex.label.color="black",
+     vertex.label.cex=.7) 
+     
+#Transitivity
+# A measure of social process such that friends of friends will become friends. A high transitivity measure indicates a tightly
+# knit collaborative environment (clique), while a low transitivity measure indicates that neighboring researchers do not collaborate
+# with each other (star).
+
+transitivity(net, vids = "SC-26", type="local")
+transitivity(net, type="local")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
