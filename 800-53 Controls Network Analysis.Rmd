@@ -10,7 +10,6 @@ output: pdf_document
 #install.packages("ggplot2")
 #install.packages("igraph")
 #install.packages("dplyr")
-#install.packages("plyr")
 #install.packages("sqldf")
 
 
@@ -24,28 +23,14 @@ library(igraph)
 library(dplyr)
 ```
 
-##1. 800-53 subcontrol relations
-This spreadsheet is a web-scrape of 800-53 detail for the FedRAMP High Baseline (~170 controls) with sub-control detail. Column A displays the main control. Column B displays the subcontrol (or enhancement). (Example: Row 2 is AC-2(4) which is an individual subcontrol of AC-2, so on and so forth). Column C shows the related controls for each subcontrol.
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Eugene's Data Cleaning for Gephi##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
 
-Could you work with this data set so that it can be more easily manipulated and come up with any detail you can surmise. Things that would be great to understand are:
-- Count (#) of related controls for each subcontrol
-- Most important related controls - by count / frequency
-- Most important related controls - by co-occurence 
-- Most important subcontrols - by count of related controls and co-occurrence
-- Most important control families - by count of related controls / ratio of subcontrols
-
-I'm going to give you creative license here. If anything doesnt make sense, feel free to ask Dan or I but don't get too into the weeds.
-
-##2. controls_4.xlsx
-This is a spreadsheet I have had some fun with already. Could you help organize the first worksheet which shows the related controls for each control in the high baseline. Column A shows the control. Columns B --> AB show the related controls for that control. 
-
-Think of the first sheet as granular detail to the second spreadsheet. 
-
-
-Reading in the data set. It is the third version, last edited on June 13th. 
+##800-53 subcontrol relations
 ```{r}
 #File path for Eugene Hwang
-#Controls <- read_excel("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/800-53 subcontrol relations.xlsx")
+Controls <- read_excel("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/800-53 subcontrol relations.xlsx")
 
 #Set working directory path
 #setwd("/Users/eugenehwang/Documents/FedRAMP/Data")
@@ -54,350 +39,6 @@ setwd("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls")
 #Get working directory path
 getwd()
 
-
-Controls <- read_excel("~/Desktop/The Clearing/800-53 subcontrol relations v3.xlsx")
-head(Controls)
-```
-
-
-#Data Cleaning  
-
-Filtering through the data set to analyze the high baseline controls. 
-```{r}
-HighControls <- Controls %>%
-  filter(High == "Y") %>% #filtering to High Baseline 
-  rename(`Control Family` = Family) %>% #renaming the Family variable to Control Family
-  select(`Control Family`, `Main Control`, `Control Enhancement`, Combined, `Related Controls`) 
-
-head(HighControls)
-```
-
-##High Control 1
-    
-Spreading Related Controls into different columns. 
-```{r warning = FALSE}
-HighControls1 <- HighControls %>%
-  select(-`Control Enhancement`) %>%
-  separate('Related Controls', paste("Related Control", 1:28, sep = " "),
-           sep = ",", 
-           extra = "warn") %>% #spreading Related Controls into different columns 
-  mutate(`Related Control 1` = str_trim(`Related Control 1`, side = "both"),
-         `Related Control 2` = str_trim(`Related Control 2`, side = "both"),
-         `Related Control 3` = str_trim(`Related Control 3`, side = "both"),
-         `Related Control 4` = str_trim(`Related Control 4`, side = "both"),
-         `Related Control 5` = str_trim(`Related Control 5`, side = "both"),
-         `Related Control 6` = str_trim(`Related Control 6`, side = "both"),
-         `Related Control 7` = str_trim(`Related Control 7`, side = "both"),
-         `Related Control 8` = str_trim(`Related Control 8`, side = "both"),
-         `Related Control 9` = str_trim(`Related Control 9`, side = "both"),
-         `Related Control 10` = str_trim(`Related Control 10`, side = "both"),
-         `Related Control 11` = str_trim(`Related Control 11`, side = "both"),
-         `Related Control 12` = str_trim(`Related Control 12`, side = "both"),
-         `Related Control 13` = str_trim(`Related Control 13`, side = "both"),
-         `Related Control 14` = str_trim(`Related Control 14`, side = "both"),
-         `Related Control 15` = str_trim(`Related Control 15`, side = "both"),
-         `Related Control 16` = str_trim(`Related Control 16`, side = "both"),
-         `Related Control 17` = str_trim(`Related Control 17`, side = "both"),
-         `Related Control 18` = str_trim(`Related Control 18`, side = "both"),
-         `Related Control 19` = str_trim(`Related Control 19`, side = "both"),
-         `Related Control 20` = str_trim(`Related Control 20`, side = "both"),
-         `Related Control 21` = str_trim(`Related Control 21`, side = "both"),
-         `Related Control 22` = str_trim(`Related Control 22`, side = "both"),
-         `Related Control 23` = str_trim(`Related Control 23`, side = "both"),
-         `Related Control 24` = str_trim(`Related Control 24`, side = "both"),
-         `Related Control 25` = str_trim(`Related Control 25`, side = "both"),
-         `Related Control 26` = str_trim(`Related Control 26`, side = "both"),
-         `Related Control 27` = str_trim(`Related Control 27`, side = "both"),
-         `Related Control 28` = str_trim(`Related Control 28`, side = "both")) #removing empty spaces in those variable's values. Not the smartest way of coding but does the job. 
-
-head(HighControls1)
-```   
-   
-##High Controls 2   
-    
-Spreading Related Control into different columns and gathering the control enhancement by main controls (removing the control enhancement detail). 
-```{r warning = FALSE}
-HighControls2 <- HighControls %>%
-  select(-`Control Enhancement`, -Combined) %>%
-  separate(`Related Controls`, paste("Related Control", 1:28, sep = " "),
-           sep = ",", 
-           extra = "warn") %>% #spreading Related Controls into different columns 
-  gather(AllRelatedControls, Value, 
-         `Related Control 1`:`Related Control 28`, na.rm = TRUE) %>%
-  group_by(`Main Control`) %>%
-  mutate(AllRelatedControls2 = paste("Related Control", 1:n(), sep = " ")) %>% 
-  ungroup() %>%
-  select(-AllRelatedControls) %>%
-  spread(AllRelatedControls2, Value, convert = TRUE) %>% 
-  select(`Control Family`, `Main Control`, `Related Control 1`, `Related Control 2`, `Related Control 3`, 
-         `Related Control 4`, `Related Control 5`, `Related Control 6`, `Related Control 7`, `Related Control 8`, 
-         `Related Control 9`, `Related Control 10`, `Related Control 11`, `Related Control 12`, 
-         `Related Control 13`, `Related Control 14`, `Related Control 15`, `Related Control 16`, 
-         `Related Control 17`, `Related Control 18`, `Related Control 19`, `Related Control 20`, 
-         `Related Control 21`, `Related Control 22`, `Related Control 23`, `Related Control 24`, 
-         `Related Control 25`, `Related Control 26`, `Related Control 27`, `Related Control 28`, 
-         `Related Control 29`, `Related Control 30`, `Related Control 31`, `Related Control 32`, 
-         `Related Control 33`, `Related Control 34`, `Related Control 35`, `Related Control 36`, 
-         `Related Control 37`) %>% #reording the variables in the table 
-    mutate(`Related Control 1` = str_trim(`Related Control 1`, side = "both"),
-         `Related Control 2` = str_trim(`Related Control 2`, side = "both"),
-         `Related Control 3` = str_trim(`Related Control 3`, side = "both"),
-         `Related Control 4` = str_trim(`Related Control 4`, side = "both"),
-         `Related Control 5` = str_trim(`Related Control 5`, side = "both"),
-         `Related Control 6` = str_trim(`Related Control 6`, side = "both"),
-         `Related Control 7` = str_trim(`Related Control 7`, side = "both"),
-         `Related Control 8` = str_trim(`Related Control 8`, side = "both"),
-         `Related Control 9` = str_trim(`Related Control 9`, side = "both"),
-         `Related Control 10` = str_trim(`Related Control 10`, side = "both"),
-         `Related Control 11` = str_trim(`Related Control 11`, side = "both"),
-         `Related Control 12` = str_trim(`Related Control 12`, side = "both"),
-         `Related Control 13` = str_trim(`Related Control 13`, side = "both"),
-         `Related Control 14` = str_trim(`Related Control 14`, side = "both"),
-         `Related Control 15` = str_trim(`Related Control 15`, side = "both"),
-         `Related Control 16` = str_trim(`Related Control 16`, side = "both"),
-         `Related Control 17` = str_trim(`Related Control 17`, side = "both"),
-         `Related Control 18` = str_trim(`Related Control 18`, side = "both"),
-         `Related Control 19` = str_trim(`Related Control 19`, side = "both"),
-         `Related Control 20` = str_trim(`Related Control 20`, side = "both"),
-         `Related Control 21` = str_trim(`Related Control 21`, side = "both"),
-         `Related Control 22` = str_trim(`Related Control 22`, side = "both"),
-         `Related Control 23` = str_trim(`Related Control 23`, side = "both"),
-         `Related Control 24` = str_trim(`Related Control 24`, side = "both"),
-         `Related Control 25` = str_trim(`Related Control 25`, side = "both"),
-         `Related Control 26` = str_trim(`Related Control 26`, side = "both"),
-         `Related Control 27` = str_trim(`Related Control 27`, side = "both"),
-         `Related Control 28` = str_trim(`Related Control 28`, side = "both")) #removing empty spaces in those variable's values. Not the smartest way of coding but does the job.
-
-head(HighControls2)
-```    
-    
-##High Controls 3
-
-Similar to HighControls1 but reformatted to make it easier to read, manipulate, and analyze.
-```{r}
-HighControls3 <- HighControls1 %>%
-  gather(AllRelatedControls, Value, `Related Control 1`:`Related Control 28`, na.rm = TRUE) %>%
-  group_by(`Main Control`, `Combined`) %>%
-  mutate(AllRelatedControls2 = paste("Related Control", 1:n(), sep = " ")) %>%
-  rename(`Related Controls` = `Value`) %>%
-  select(-`AllRelatedControls`, -`AllRelatedControls2`) %>%
-  ungroup() %>%
-  arrange(`Main Control`, `Combined`) 
-
-head(HighControls3)
-```
-     
-##High Controls 4   
-      
-Similar to HighControls2 but reformatted to make it easier to manipulate. 
-```{r}
-HighControls4 <- HighControls1 %>%
-  select(-`Combined`) %>%
-  gather(AllRelatedControls, Value, `Related Control 1`:`Related Control 28`, na.rm = TRUE) %>%
-  group_by(`Main Control`) %>%
-  mutate(AllRelatedControls2 = paste("Related Control", 1:n(), sep = " ")) %>%
-  rename(`Related Controls` = `Value`) %>%
-  select(-`AllRelatedControls`, -`AllRelatedControls2`) %>%
-  ungroup() %>%
-  arrange(`Main Control`) 
-
-head(HighControls4)
-```
-    
-        
-#Data Analysis      
-   
-**1. Most important Related Controls - by count / frequency**
-```{r}
-CountRC <- HighControls3 %>%
-  group_by(`Related Controls`) %>%
-  summarise(n_RelatedControls = n()) %>%
-  arrange(desc(n_RelatedControls))
-
-head(CountRC)
-
-write_csv(CountRC, "CountRC.csv") #exporting CountRC into a csv file called CountRC.csv into your directory. 
-
-#TESTING
-
-#Number of times Related Controls = "AC-3" exists? 
-#Answer = 29
-HighControls3 %>%
-  filter(`Related Controls` == 'AC-3')    
-   
-#VISUAL
-
-CountRC %>%
-  filter(n_RelatedControls >= 10) %>%
-  ggplot(aes(reorder(`Related Controls`, -n_RelatedControls), n_RelatedControls)) + 
-  geom_bar(stat = "identity") + 
-  ggtitle("Most Important Related Controls based on Count") +
-    xlab("Top 21 Related Controls") + 
-    ylab("Number of Related Controls")
-```
-
-**2. Number of Related Controls for Control** 
-#Can also be considered as most important Controls - by count of Related Control
-```{r}
-
-CountRC_CE <- HighControls3 %>%
-  group_by(`Combined`) %>%
-  summarise(n_RelatedControls = n()) %>%
-  arrange(desc(n_RelatedControls))
-
-head(CountRC_CE)
-
-write_csv(CountRC_CE, "CountRC_CE.csv") #exporting CountRC_CE into a csv file called CountRC_CE.csv into your directory. 
-
-#TESTING
-
-#How many Related Controls are there when the Main Control = "AU-6" and the Control Enhancement = "0"? 
-#Answer = 28
-HighControls3 %>%
-  filter(`Combined` == 'AU-6-0')
-
-#VISUAL
-
-CountRC_CE %>%
-  filter(n_RelatedControls >= 15) %>%
-  ggplot(aes(reorder(`Combined`, -n_RelatedControls), n_RelatedControls)) +
-    geom_bar(stat = "identity") + 
-    ggtitle("Largest Amount of Related Controls for each Control") +
-    xlab("Top 11 Controls") + 
-    ylab("Number of Related Controls")
-```
-
-**3. Number of Related Controls for each Main Control** FIX VISUAL
-```{r}
-CountRC_MC <- HighControls3 %>%
-  group_by(`Main Control`, `Related Controls`) %>%
-  summarise(n_RelatedControls = n()) %>%
-  arrange(desc(n_RelatedControls))
-
-head(CountRC_MC)  
-  
-write_csv(CountRC_MC, "CountRC_MC.csv") #exporting CountRC_MC into a csv file called CountRC_MC.csv into your directory. 
-
-#TESTING
-
-#Number of Related Controls when Related Controls = "AU-12" and Main Control = "AU-6"? 
-#Answer = 4
-HighControls3 %>%
-  filter(`Related Controls` == 'AU-12', 
-         `Main Control` == 'AU-6')
-
-#VISUAL
-
-#CountRC_MC %>%
-#  filter(n_RelatedControls > 1) %>%
-#  ggplot(aes(reorder(`Main Control`, -n_RelatedControls), n_RelatedControls)) +
-#    geom_point() +
-#    geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
-#    ggtitle("Largest Amount of Related Controls for each Main Control") +
-#    xlab("Top 16 Main Controls") + 
-#    ylab("Number of Related Controls")
-```
-
-**4. Number of Related Controls for each Control Family** FIX VISUAL AND RECHECK ANALYSIS
-```{r}
-CountRC_CF <- HighControls3 %>%
-  group_by(`Control Family`, `Related Controls`) %>%
-  summarise(n_RelatedControls = n()) %>%
-  arrange(desc(n_RelatedControls))
-
-head(CountRC_CF)
-
-write_csv(CountRC_CF, "CountRC_CF.csv") #exporting CountRC_CF into a csv file called CountRC_CF.csv into your directory. 
-
-#TESTING
-
-#Number of Related Controls when Related Controls = "AC-3" and Control Family = "AC"? 
-#Answer = 11
-HighControls3 %>%
-  filter(`Related Controls` == 'AC-3', 
-         `Control Family` == 'AC')   
-  
-#VISUAL
-
-#CountRC_CF %>%
-#  filter(n_RelatedControls > 1) %>%
-#  ggplot(aes(reorder(`Control Family`, -n_RelatedControls), n_RelatedControls)) +
-#    geom_point() +
-#    geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
-#    ggtitle("Number of Related Controls for each Control Family") +
-#    xlab("Top 16 Control Family") + 
-#    ylab("Number of Related Controls")
-```    
-
-**5. Most important Related Controls - by co-occurence** 
-MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX 
-
-**6. Most important Controls - by co-occurrence** 
-MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX 
-
-**7. Most important Control Families - by count of Related Controls / ratio of Controls** MUST FINISH TESTING & VISUALS FOR RATIO
-```{r}
-##By count of Related Controls 
-CountCF <- HighControls3 %>%
-  group_by(`Control Family`) %>%
-  summarise(n_ControlFamily = n()) %>%
-  arrange(desc(n_ControlFamily))
-
-head(CountCF)
-
-write_csv(CountCF, "CountCF.csv") #exporting CountCF into a csv file called CountCF.csv into your directory. 
-
-#TESTING  
-    
-#Number of Related Controls when Control Family = "AC"? 
-#Answer = 162
-HighControls3 %>%
-  filter(`Control Family` == 'AC')
-
-#VISUAL
-
-CountCF %>%
-  #filter(n_ControlFamily >= 15) %>%
-  ggplot(aes(reorder(`Control Family`, -n_ControlFamily), n_ControlFamily)) +
-    geom_bar(stat = "identity") +
-    #geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
-    ggtitle("Number of Related Controls for each Control Family") +
-    xlab("Control Families") + 
-    ylab("Number of Related Controls")   
-   
-#################################################################################################
-
-##By ratio of Controls 
-CountCFRatio <- HighControls3 %>%
-  mutate(n_TotalControls = n_distinct(`Combined`)) %>%
-  group_by(`Control Family`) %>%
-  mutate(n_Controls_by_Fam = n_distinct(`Combined`),
-         Ratio_Controls = n_Controls_by_Fam/n_TotalControls) %>% 
-  arrange(desc(Ratio_Controls))
-
-head(CountCFRatio)
-
-write_csv(CountCFRatio, "CountCFRatio.csv") #exporting CountCFRatio into a csv file called CountCFRatio.csv into your directory. 
-
-#TESTING
-
-#VISUAL
-
-#CountCFRatio %>%
-#  filter(n_ControlFamily >= 15) %>%
-#  ggplot(aes(reorder(`Control Family`, -n_ControlFamily), n_ControlFamily)) +
-#    geom_bar(stat = "identity") +
-#    geom_text(aes(label = `Related Controls`), size = 3, check_overlap = TRUE) + 
-#    ggtitle("Number of Related Controls for each Control Family") +
-#    xlab("Control Families") + 
-#    ylab("Number of Related Controls")
-```
-
-
-**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
-##Eugene's Data Cleaning for Gephi##
-**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
-```{r}
 #**Selecting only the columns needed and renaming columns with underscore **
 Controls_mod <- Controls
 
@@ -542,10 +183,13 @@ Gephi_Controls6 <- Gephi_Controls4 %>%
 
 ```
 
-##8. Network Analysis
+##Network Analysis
 **Creating Node and Edge tables** 
 ```{r}
+#***~***~***
 #Create Node Table
+#***~***~***
+
 #Capturing distinct Main Controls
 Nodes <- distinct(Controls_mod, Control_Family, Family_Name, Main_Control, Control_Name)
 
@@ -562,6 +206,8 @@ write_csv(Nodes, "Nodes.csv") #exporting the Node file into a csv file called No
 
 #***~***~***
 #Create Edges Table
+#***~***~***
+
 Edges <- Gephi_Controls4 %>%
   group_by(Main_Control, Related_Controls) %>%
   summarise(n = n()) %>%
@@ -572,16 +218,9 @@ Edges <- Gephi_Controls4 %>%
 write_csv(Edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
 ```
 
-**8. Network Analysis - iGraph** 
-**Needs to be revisited and updated with new tables**
+##Network Metrics
+**Old analysis** 
 ```{r}
-#Turning Networks into igraph objects
-net <- graph_from_data_frame(d=Edges, vertices=Nodes, directed=T) 
-
-#Nodes and Edges
-E(net)       # The edges of the "net" object
-V(net)       # The vertices of the "net" object
-
 #Plotting graph
 plot(net, edge.arrow.size=.2, edge.curved=0,
      vertex.color="orange", vertex.frame.color="#555555",
@@ -597,15 +236,263 @@ transitivity(net, vids = "SC-26", type="local")
 transitivity(net, type="local")
 ```
 
+These are the main functions used to create and analyze our network.
 
+First, install and load the following packages:
 
+```{r, results='hide'}
+#install.packages("sna")
+#install.packages("intergraph")
+#install.packages("RColorBrewer")
+#install.packages("randomcoloR")
+#install.packages("caret")
+#install.packages("reshape2")
 
+library(sna)
+library(intergraph)
+library(RColorBrewer)
+library(randomcoloR)
+library(caret) 
+library(reshape2) 
+```
 
+**Load Functions**
 
+The following function builds the graph with all of the node and edge level attributes that are found in the data provided or derived by the data provided.
+```{r}
+#Turning Networks into igraph objects
+net <- graph_from_data_frame(d=Edges, vertices=Nodes, directed=T) 
 
+#Nodes and Edges
+E(g)       # The edges of the "net" object
+V(g)       # The vertices of the "net" object
+```
 
+```{r}
+build_graph <- function (nodes, edges) {
+  g = graph.empty(nrow(nodes), directed = TRUE)
+  # covert R factor to character
+  V(g)$Id = as.character(Nodes$Id)
+  V(g)$Label = as.character(Nodes$Label)
+  V(g)$Control_Name = as.character(Nodes$Control_Name)
+  V(g)$Control_Family = as.character(Nodes$Control_Family)
+  V(g)$Family_Name = as.character(Nodes$Family_Name)
+  # a edge array: odd index -> source, even index -> target
+  edge_list = as.vector(t(cbind(as.character(Edges$Source), as.character(Edges$Target))))
+  g = add_edges(g, edge_list)
+  E(g)$Weight = Edges$Weight 
+  #remove nodes by degree 
+  #g = filter_node_by_number_publication(g, num_pub_floor)
+  return(g)
+}
+```
+**The next functions are essential for calculating the network level statistics.**
 
+This function calculates assortativity, which is a single statistic measuring the degree of connections betweeen similiar nodes.
+```{r}
+get_assortativity <- function(g, attr) {
+  cat = igraph::get.vertex.attribute(g, attr )
+  #!! have to convert vertex values from chartacter to factor
+  assortativity = assortativity_nominal(g, as.factor(cat), directed = F)
+  return(assortativity);
+}
+```
+The next function is used to calculate average degree, which calculates the average connections per node for each attribute specified.
+```{r}
+get_degree <- function(g, attr){
+  cat = igraph::get.vertex.attribute(g, attr )
+  V(g)$degree = igraph::degree(g)
+  V(g)$strength = igraph::strength(g)
+  return(g)
+}
+```
+The next function calculates a confusion matrix which generates percentages associated with frequencies of collaboration across levels of a particular attribute.
+```{r}
+# calcuate a confusion table between groups 
+get_group_confusion <- function(nodes, edges, attr) {
+  from_to = select(edges, Source, Target)
+  from_to$Source = as.character(from_to$Source)
+  from_to$Target = as.character(from_to$Target)
+  nodes$Id = as.character(nodes$Id)
+  from_to = left_join(from_to, nodes, by= c('Source' = 'Id'))
+  from_to = left_join(from_to, nodes, by= c('Target' = 'Id'))
+  x = paste0(attr, '.x')
+  y = paste0(attr, '.y')
+  cols <- c(x, y)
+  colNums <- match(cols,colnames(from_to))
+  fg_tg = select_(from_to, x, y)
+  colnames(fg_tg) = c('node_a', 'node_b')
+  Source_Groups = as.factor(fg_tg$node_a);
+  Target_Groups = as.factor(fg_tg$node_b);
+  tbl = table(Source_Groups, Target_Groups)
+  prop_table = prop.table(tbl)
+  #since it is undirected graph, convert it into triangular
+  p1 = prop_table;
+  p2 = t(prop_table);
+  p3 = p1 + p2
+  p4 = lower.tri.remove(p3)
+  diag(p4) = diag(p4) / 2
+  prop_table = p4
+  return(prop_table)
+}
+```
+The next function calculates the transitivity, which measures how tightly knit a community is.
+```{r}
+get_transitivity <- function(g) {
+  cc = transitivity(g, type='local', vids=V(g)$name)
+  V(g)$cc = cc 
+  return(g)
+}
+```
+The following function counts the number of cliques with *n* connected nodes in the network. For our analysis, we used this function to count complete triads.
+```{r}
+# looping through clique to count group membership in clique 
+get_cliques_membership <- function(g, n, attr) {
+  cs  = cliques(g, min=n)
+  cs_len = sapply(cs, length)
+  cs_n = cs[cs_len == n]
+  cat = unique(igraph::get.vertex.attribute(g, attr))
+  numCli = length(cs_n)
+  m = matrix(0, nrow = numCli, ncol = length(cat))
+  colnames(m) = cat
+  #looping throught cliques to count membership by groups
+  for (i in 1:numCli) {
+    c = cs_n[[i]]
+    a = vertex_attr(g,attr, c)
+    for (ct in cat) {
+      m[i,ct] = sum(a==ct)
+    }
+  }
+  return(m)
+}
+```
+This function takes the confusion matrix and adjusts the percentages to reflect the percentages to be a proportion of the particular level of an attribute rather than reflecting the overall distribution.
+```{r}
+get_confusion_within_group <- function(prop_table) {
+  conf_mtx <- prop_table
+  conf_mtx[lower.tri(conf_mtx)]<-t(conf_mtx)[lower.tri(conf_mtx)]
+  conf_mtx <- data.frame(conf_mtx) %>% dplyr::mutate(Source_Groups = as.character(Source_Groups), 
+                                                     Target_Groups = as.character(Target_Groups))
+  lvl <- unique(conf_mtx$Source_Groups)
+  conf_mtx[,"percent_within"] = NA
+  for (i in 1:nrow(conf_mtx)){
+    for (j in 1:length(lvl)){
+      if (conf_mtx[i,"Source_Groups"] == lvl[j]){
+        sum_relevant_rows <- conf_mtx %>% dplyr::filter(Source_Groups == lvl[j])
+        sum_relevant_rows <- sum(sum_relevant_rows$Freq)
+        conf_mtx[i,"percent_within"] = as.numeric(conf_mtx[i,"Freq"])/sum_relevant_rows
+      }
+      else {return}
+    }
+  }
+  return(conf_mtx)
+}
+```
+The next function takes the output of the previous function to calculate the within and outside group collaboration for levels of a particular attribute.
+```{r}
+get_in_out_tbl <- function(conf_mtx){
+  sum_tbl <- conf_mtx %>% dplyr::group_by(Source_Groups) %>% 
+    dplyr::summarise(dist = sum(Freq)) %>%
+    select(Source_Groups,dist) %>% 
+    filter(is.na(dist)==FALSE) %>% 
+    arrange(desc(dist))
+  in_out_pct <- conf_mtx %>% 
+    dplyr::mutate(match = ifelse(Source_Groups == Target_Groups,"within group","outside group"), 
+                  percent_within = ifelse(is.na(percent_within)==TRUE, 0, percent_within)) %>% 
+    dplyr::group_by(Source_Groups, match) %>% 
+    dplyr::summarise(in_out_pct = sum(percent_within))
+  return(in_out_pct)
+}
+```
 
+The following functions use the utility functions listed above and get network statistics by year and overall.
+```{r}
+analyze_graph <- function(g, nodes, edges, attr) {
+  #attr: Group, Activity, Discipline
+  stats = list()
+  print(attr)
+  # 1.assortativity
+  assortativity = get_assortativity(g, attr)
+  stats$assortativity = assortativity
+# 2. Average degree, transtivity, and degee distributions
+  g = get_degree(g, attr)
+  g = get_transitivity(g)
+  var = vertex_attr(g, attr)
+  lvls =  unique(var)
+  lvl_len = length(lvls)
+  dgs = list()
+  trs = list()
+  strs = list()
+  dg_dist = list()
+  for (i in 1:lvl_len) {
+    lvl = lvls[i]
+    lvl_nodes = V(g)[var == lvl]
+    dgs[[lvl]] = mean(lvl_nodes$degree,  na.rm = TRUE)
+    trs[[lvl]] = mean(lvl_nodes$cc,  na.rm = TRUE)
+    strs[[lvl]] = mean(lvl_nodes$strength,  na.rm = TRUE)
+    dg = degree.distribution(g, v=lvl_nodes)
+    dg_dist[[lvl]] = dg
+  }
+  dgs[['all_nodes']] =   mean(V(g)$degree, na.rm = TRUE)
+  strs[['all_nodes']] =   mean(V(g)$strength, na.rm = TRUE)
+  all_dg = degree.distribution(g)
+  dg_dist[['all_nodes']] = all_dg
+  
+  stats$degree = dgs
+  stats$strength = strs
+  stats$transitivity = trs
+  stats$degree_dist =  dg_dist
+  
+  # 3. confusion matrix  dyad level
+  prop_table = get_group_confusion(nodes, edges, attr)
+  stats$prop_table = prop_table
+  
+  # 3a. within group vs outside group %
+  in_out_table = get_in_out_tbl(get_confusion_within_group(prop_table))
+  stats$in_out_table = in_out_table
+  
+  ## calcuate graph level statistics
+  # the ratio of the number of edges and the number of possible edges
+  stats$density = edge_density(g, loops=FALSE)
+  
+  
+  #count group membership in complete triad graph
+  print(paste(rep('#', 30),collapse = ''))
+  n = 3 
+  m = get_cliques_membership(g, n, attr)
+  
+  triad_counts = list()
+  for (i in 1:lvl_len) {
+    lvl = lvls[i]
+    lvl_nodes = V(g)[var == lvl]
+    triad_count = sum(m[, lvl] == 3)
+    triad_counts[[lvl]] = triad_count
+  }
+  stats$triads_counts = triad_counts
+  return(stats)
+  #group blocks
+  #clustering analysis
+  #get_blockmodel()
+}
+
+get_stats <- function(g, attr) {
+  all_years_stats = analyze_graph(g, nodes, edges,attr)
+  # looping over years
+  yr_range = 2002:2016
+  stats_by_year = list()
+  for (yr in yr_range) {
+    yr_edges = edges[edges$PUB_YEAR<=yr,]
+    yr_g = build_graph(nodes, yr_edges)
+    stat =  analyze_graph(yr_g, nodes, yr_edges, attr)
+    print(stat)
+    stats_by_year[[as.character(yr)]]  = stat
+  }
+  stats = list()
+  stats[['all_years_stats']] = all_years_stats
+  stats[['stats_by_year']] = stats_by_year
+  return(stats)
+}
+```
 
 
 
