@@ -1,0 +1,208 @@
+---
+Title: "FedRAMP High Baseline Controls Analysis"
+---
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Install and load the following packages##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+```{r, results='hide'}
+#install.packages("readxl")
+#install.packages("readr")
+#install.packages("tidyverse")
+```
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(readr)
+library(tidyverse)
+```
+
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Data Cleaning##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##800-53 subcontrol relations
+```{r}
+#File path
+Controls <- read_excel("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/800-53 subcontrol relations.xlsx")
+
+#Set working directory path
+setwd("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/Gephi")
+
+#Get working directory path
+getwd()
+
+#Selecting only the columns needed and renaming columns with underscore **
+Controls_mod <- Controls
+
+names(Controls_mod) <- c("Control_Family","Family_Name","Control_Name", "Main_Control","Control_Enhancement_Name", "Control_Enhancement","Combined","Related_Controls","Low","Low_1","Tailoring_Action","Medium","Medium_1","High","High_1","Priority","Impact")
+
+#Only looking at High Impact Controls
+Gephi_Controls <- Controls_mod %>%
+  filter(High == "Y") %>% #filtering to High Baseline
+  select(Control_Family, Family_Name, Main_Control, Control_Name, Control_Enhancement, Combined, Related_Controls)
+         #,Low, Medium, High, Impact, Tailoring_Action) 
+```
+
+##Spreading Related Controls into different columns.
+**Gephi_Controls1**
+```{r warning = FALSE}
+Gephi_Controls1 <- Gephi_Controls %>%
+  select(-Control_Enhancement) %>%
+  separate(Related_Controls, paste("Related_Control", 1:28, sep = "_"),
+           sep = ",", 
+           extra = "warn") %>% #spreading Related Controls into different columns 
+  mutate(Related_Control_1 = str_trim(Related_Control_1, side = "both"),
+         Related_Control_2 = str_trim(Related_Control_2, side = "both"),
+         Related_Control_3 = str_trim(Related_Control_3, side = "both"),
+         Related_Control_4 = str_trim(Related_Control_4, side = "both"),
+         Related_Control_5 = str_trim(Related_Control_5, side = "both"),
+         Related_Control_6 = str_trim(Related_Control_6, side = "both"),
+         Related_Control_7 = str_trim(Related_Control_7, side = "both"),
+         Related_Control_8 = str_trim(Related_Control_8, side = "both"),
+         Related_Control_9 = str_trim(Related_Control_9, side = "both"),
+         Related_Control_10 = str_trim(Related_Control_10, side = "both"),
+         Related_Control_11 = str_trim(Related_Control_11, side = "both"),
+         Related_Control_12 = str_trim(Related_Control_12, side = "both"),
+         Related_Control_13 = str_trim(Related_Control_13, side = "both"),
+         Related_Control_14 = str_trim(Related_Control_14, side = "both"),
+         Related_Control_15 = str_trim(Related_Control_15, side = "both"),
+         Related_Control_16 = str_trim(Related_Control_16, side = "both"),
+         Related_Control_17 = str_trim(Related_Control_17, side = "both"),
+         Related_Control_18 = str_trim(Related_Control_18, side = "both"),
+         Related_Control_19 = str_trim(Related_Control_19, side = "both"),
+         Related_Control_20 = str_trim(Related_Control_20, side = "both"),
+         Related_Control_21 = str_trim(Related_Control_21, side = "both"),
+         Related_Control_22 = str_trim(Related_Control_22, side = "both"),
+         Related_Control_23 = str_trim(Related_Control_23, side = "both"),
+         Related_Control_24 = str_trim(Related_Control_24, side = "both"),
+         Related_Control_25 = str_trim(Related_Control_25, side = "both"),
+         Related_Control_26 = str_trim(Related_Control_26, side = "both"),
+         Related_Control_27 = str_trim(Related_Control_27, side = "both"),
+         Related_Control_28 = str_trim(Related_Control_28, side = "both")) #removing empty spaces in those variable's values. 
+```
+
+##Spreading Related Control into different columns and gathering the control enhancement by main controls (removing the control enhancement detail).
+**Gephi_Controls2**
+```{r warning = FALSE}
+Gephi_Controls2 <- Gephi_Controls %>%
+  select(-Control_Enhancement, -Combined) %>%
+  separate(Related_Controls, paste("Related_Control", 1:28, sep = "_"),
+           sep = ",", 
+           extra = "warn") %>% #spreading Related Controls into different columns
+  gather(AllRelatedControls, Value, 
+         Related_Control_1:Related_Control_28, na.rm = TRUE) %>%
+  group_by(Main_Control) %>%
+  mutate(AllRelatedControls2 = paste("Related_Control", 1:n(), sep = "_")) %>% 
+  ungroup() %>%
+  select(-AllRelatedControls) %>%
+  spread(AllRelatedControls2, Value, convert = TRUE) %>% 
+  select(Control_Family, Family_Name, Main_Control, Control_Name, #Low, Medium, High, Impact,
+         Related_Control_1, Related_Control_2, Related_Control_3, Related_Control_4, Related_Control_5,
+         Related_Control_6, Related_Control_7, Related_Control_8, Related_Control_9, Related_Control_10,
+         Related_Control_11, Related_Control_12, Related_Control_13, Related_Control_14, Related_Control_15,
+         Related_Control_16, Related_Control_17, Related_Control_18, Related_Control_19, Related_Control_20,
+         Related_Control_21, Related_Control_22, Related_Control_23, Related_Control_24, Related_Control_25,
+         Related_Control_26, Related_Control_27, Related_Control_28, Related_Control_29, Related_Control_30,
+         Related_Control_31, Related_Control_32, Related_Control_33, Related_Control_34, Related_Control_35,
+         Related_Control_36, Related_Control_37) %>% #reording the variables in the table 
+  mutate(Related_Control_1 = str_trim(Related_Control_1, side = "both"),
+         Related_Control_2 = str_trim(Related_Control_2, side = "both"),
+         Related_Control_3 = str_trim(Related_Control_3, side = "both"),
+         Related_Control_4 = str_trim(Related_Control_4, side = "both"),
+         Related_Control_5 = str_trim(Related_Control_5, side = "both"),
+         Related_Control_6 = str_trim(Related_Control_6, side = "both"),
+         Related_Control_7 = str_trim(Related_Control_7, side = "both"),
+         Related_Control_8 = str_trim(Related_Control_8, side = "both"),
+         Related_Control_9 = str_trim(Related_Control_9, side = "both"),
+         Related_Control_10 = str_trim(Related_Control_10, side = "both"),
+         Related_Control_11 = str_trim(Related_Control_11, side = "both"),
+         Related_Control_12 = str_trim(Related_Control_12, side = "both"),
+         Related_Control_13 = str_trim(Related_Control_13, side = "both"),
+         Related_Control_14 = str_trim(Related_Control_14, side = "both"),
+         Related_Control_15 = str_trim(Related_Control_15, side = "both"),
+         Related_Control_16 = str_trim(Related_Control_16, side = "both"),
+         Related_Control_17 = str_trim(Related_Control_17, side = "both"),
+         Related_Control_18 = str_trim(Related_Control_18, side = "both"),
+         Related_Control_19 = str_trim(Related_Control_19, side = "both"),
+         Related_Control_20 = str_trim(Related_Control_20, side = "both"),
+         Related_Control_21 = str_trim(Related_Control_21, side = "both"),
+         Related_Control_22 = str_trim(Related_Control_22, side = "both"),
+         Related_Control_23 = str_trim(Related_Control_23, side = "both"),
+         Related_Control_24 = str_trim(Related_Control_24, side = "both"),
+         Related_Control_25 = str_trim(Related_Control_25, side = "both"),
+         Related_Control_26 = str_trim(Related_Control_26, side = "both"),
+         Related_Control_27 = str_trim(Related_Control_27, side = "both"),
+         Related_Control_28 = str_trim(Related_Control_28, side = "both"),
+         Related_Control_29 = str_trim(Related_Control_29, side = "both"),
+         Related_Control_30 = str_trim(Related_Control_30, side = "both"),
+         Related_Control_31 = str_trim(Related_Control_31, side = "both"),
+         Related_Control_32 = str_trim(Related_Control_32, side = "both"),
+         Related_Control_33 = str_trim(Related_Control_33, side = "both"),
+         Related_Control_34 = str_trim(Related_Control_34, side = "both"),
+         Related_Control_35 = str_trim(Related_Control_35, side = "both"),
+         Related_Control_36 = str_trim(Related_Control_36, side = "both"),
+         Related_Control_37 = str_trim(Related_Control_37, side = "both")) #removing empty spaces in those variable's values. 
+```    
+
+##Similar to Gephi_Controls2 but reformatted to make it easier to manipulate.
+**Gephi_Controls4**
+```{r}
+Gephi_Controls4 <- Gephi_Controls1 %>%
+  select (-Combined) %>%
+  gather(AllRelatedControls, Value, Related_Control_1:Related_Control_28, na.rm = TRUE) %>%
+  group_by(Main_Control) %>%
+  mutate(AllRelatedControls2 = paste("Related_Control", 1:n(), sep = "_")) %>%
+  rename(Related_Controls = Value) %>%
+  select(-AllRelatedControls, -AllRelatedControls2) %>%
+  ungroup() %>%
+  arrange(Main_Control) 
+```
+
+##Removes duplicates if the main control has two of the same related controls
+**Gephi_Controls5 & Gephi_Controls6**
+```{r}
+#This removes 36 duplicates (ex. AU-6 & AU-12, AC-18 & AC-19)
+Gephi_Controls5 <- unique(Gephi_Controls4)
+
+#This provideds a new column -- "Weight" -- counts on the duplicates
+Gephi_Controls6 <- Gephi_Controls4 %>%
+  # (Main_Control, Control_Name, Control_Family, Family_Name, Related_Controls )
+  group_by(Control_Family, Family_Name, Main_Control, Control_Name, Related_Controls) %>%
+  summarise(n = n()) %>%
+  rename("Weight"=n) #%>%
+  #arrange(desc(Weight))
+```
+
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Network Preparation##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Creating Node table
+```{r}
+#Capturing distinct Main Controls
+nodes <- distinct(Controls_mod, Control_Family, Family_Name, Main_Control, Control_Name)
+
+#Adding Label column  
+nodes["Label"] = nodes$Main_Control 
+
+#Reordering and renaming columns
+nodes <- nodes %>%
+  select (Main_Control, Label, Control_Name, Control_Family, Family_Name) %>%
+  rename("Id" = Main_Control) 
+
+nodes = nodes[complete.cases(nodes$Id),]
+
+#Write to CSV 
+write_csv(nodes, "Nodes.csv") #exporting the Node file into a csv file called Nodes.csv into your working directory you set earlier.
+```
+
+##Creating Edge table
+```{r}
+edges <- Gephi_Controls4 %>%
+  group_by(Main_Control, Related_Controls) %>%
+  summarise(n = n()) %>%
+  rename(Source = Main_Control, Target = Related_Controls, Weight=n) #%>%
+  #arrange(desc(Weight))
+
+#Write to CSV
+write_csv(edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
+```

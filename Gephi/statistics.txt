@@ -1,0 +1,192 @@
+[1] "###############Assortativity###############"
+[1] "assortativity: 0.252497296529121"
+
+
+[1] "###############Degree###############"
+[1] "Average Access Control Degree: 12.640000"
+[1] "Average Awareness and Training Degree: 8.600000"
+[1] "Average Audit and Accountability Degree: 10.750000"
+[1] "Average Security Assessment and Authorization Degree: 12.111111"
+[1] "Average Configuration Management Degree: 18.636364"
+[1] "Average Contingency Planning Degree: 8.769231"
+[1] "Average Identification and Authentication Degree: 10.272727"
+[1] "Average Incident Response Degree: 8.300000"
+[1] "Average Maintenance Degree: 13.000000"
+[1] "Average Media Protection Degree: 10.000000"
+[1] "Average Physical and Environmental Protection Degree: 5.050000"
+[1] "Average Planning Degree: 8.555556"
+[1] "Average Personnel Security Degree: 7.875000"
+[1] "Average Risk Assessment Degree: 8.000000"
+[1] "Average System and Services Acquisition Degree: 7.590909"
+[1] "Average System and Communications Protection Degree: 5.431818"
+[1] "Average System and Information Integrity Degree: 8.941176"
+[1] "Average Program Management Degree: 2.875000"
+[1] "Average all_nodes Degree: 8.617188"
+
+
+[1] "###############Confusion Table###############"
+                                       Target_Groups
+Source_Groups                           Access Control Audit and Accountability Awareness and Training
+  Access Control                          0.0507706256             0.0163191296           0.0018132366
+  Audit and Accountability                                         0.0317316410           0.0009066183
+  Awareness and Training                                                                  0.0054397099
+  Configuration Management                                                                            
+  Contingency Planning                                                                                
+  Identification and Authentication                                                                   
+  Incident Response                                                                                   
+  Maintenance                                                                                         
+  Media Protection                                                                                    
+  Personnel Security                                                                                  
+  Physical and Environmental Protection                                                               
+  Planning                                                                                            
+  Program Management                                                                                  
+  Risk Assessment                                                                                     
+  Security Assessment and Authorization                                                               
+  System and Communications Protection                                                                
+  System and Information Integrity                                                                    
+  System and Services Acquisition                                                                     
+                                       Target_Groups
+Source_Groups                           Configuration Management Contingency Planning Identification and Authentication
+  Access Control                                    0.0217588395         0.0018132366                      0.0281051677
+  Audit and Accountability                          0.0063463282         0.0000000000                      0.0036264733
+  Awareness and Training                            0.0000000000         0.0018132366                      0.0009066183
+  Configuration Management                          0.0344514959         0.0045330916                      0.0018132366
+  Contingency Planning                                                   0.0253853128                      0.0000000000
+  Identification and Authentication                                                                        0.0145058930
+  Incident Response                                                                                                    
+  Maintenance                                                                                                          
+  Media Protection                                                                                                     
+  Personnel Security                                                                                                   
+  Physical and Environmental Protection                                                                                
+  Planning                                                                                                             
+  Program Management                                                                                                   
+  Risk Assessment                                                                                                      
+  Security Assessment and Authorization                                                                                
+  System and Communications Protection                                                                                 
+  System and Information Integrity                                                                                     
+  System and Services Acquisition                                                                                      
+                                       Target_Groups
+Source_Groups                           Incident Response  Maintenance Media Protection Personnel Security
+  Access Control                             0.0027198549 0.0108794198     0.0081595648       0.0045330916
+  Audit and Accountability                   0.0054397099 0.0036264733     0.0054397099       0.0000000000
+  Awareness and Training                     0.0018132366 0.0000000000     0.0000000000       0.0036264733
+  Configuration Management                   0.0045330916 0.0027198549     0.0000000000       0.0000000000
+  Contingency Planning                       0.0081595648 0.0027198549     0.0081595648       0.0000000000
+  Identification and Authentication          0.0000000000 0.0054397099     0.0009066183       0.0045330916
+  Incident Response                          0.0126926564 0.0000000000     0.0027198549       0.0000000000
+  Maintenance                                             0.0063463282     0.0063463282       0.0000000000
+  Media Protection                                                         0.0054397099       0.0000000000
+  Personnel Security                                                                          0.0135992747
+  Physical and Environmental Protection                                                                   
+  Planning                                                                                                
+  Program Management                                                                                      
+  Risk Assessment                                                                                         
+  Security Assessment and Authorization                                                                   
+  System and Communications Protection                                                                    
+  System and Information Integrity                                                                        
+  System and Services Acquisition                                                                         
+                                       Target_Groups
+Source_Groups                           Physical and Environmental Protection     Planning Program Management Risk Assessment
+  Access Control                                                 0.0054397099 0.0181323663       0.0009066183    0.0000000000
+  Audit and Accountability                                       0.0081595648 0.0000000000       0.0018132366    0.0027198549
+  Awareness and Training                                         0.0027198549 0.0036264733       0.0027198549    0.0000000000
+  Configuration Management                                       0.0036264733 0.0045330916       0.0045330916    0.0054397099
+  Contingency Planning                                           0.0063463282 0.0018132366       0.0036264733    0.0018132366
+  Identification and Authentication                              0.0027198549 0.0036264733       0.0009066183    0.0018132366
+  Incident Response                                              0.0036264733 0.0018132366       0.0009066183    0.0018132366
+  Maintenance                                                    0.0054397099 0.0036264733       0.0009066183    0.0009066183
+  Media Protection                                               0.0072529465 0.0063463282       0.0009066183    0.0036264733
+  Personnel Security                                             0.0072529465 0.0045330916       0.0009066183    0.0000000000
+  Physical and Environmental Protection                          0.0135992747 0.0000000000       0.0009066183    0.0018132366
+  Planning                                                                    0.0018132366       0.0063463282    0.0000000000
+  Program Management                                                                             0.0000000000    0.0018132366
+  Risk Assessment                                                                                                0.0036264733
+  Security Assessment and Authorization                                                                                      
+  System and Communications Protection                                                                                       
+  System and Information Integrity                                                                                           
+  System and Services Acquisition                                                                                            
+                                       Target_Groups
+Source_Groups                           Security Assessment and Authorization System and Communications Protection
+  Access Control                                                 0.0145058930                         0.0371713509
+  Audit and Accountability                                       0.0054397099                         0.0154125113
+  Awareness and Training                                         0.0000000000                         0.0000000000
+  Configuration Management                                       0.0099728015                         0.0135992747
+  Contingency Planning                                           0.0027198549                         0.0072529465
+  Identification and Authentication                              0.0045330916                         0.0090661831
+  Incident Response                                              0.0000000000                         0.0045330916
+  Maintenance                                                    0.0009066183                         0.0054397099
+  Media Protection                                               0.0000000000                         0.0072529465
+  Personnel Security                                             0.0000000000                         0.0000000000
+  Physical and Environmental Protection                          0.0018132366                         0.0036264733
+  Planning                                                       0.0027198549                         0.0000000000
+  Program Management                                             0.0063463282                         0.0009066183
+  Risk Assessment                                                0.0036264733                         0.0018132366
+  Security Assessment and Authorization                          0.0117860381                         0.0045330916
+  System and Communications Protection                                                                0.0380779692
+  System and Information Integrity                                                                                
+  System and Services Acquisition                                                                                 
+                                       Target_Groups
+Source_Groups                           System and Information Integrity System and Services Acquisition
+  Access Control                                            0.0108794198                    0.0018132366
+  Audit and Accountability                                  0.0172257480                    0.0000000000
+  Awareness and Training                                    0.0018132366                    0.0063463282
+  Configuration Management                                  0.0163191296                    0.0172257480
+  Contingency Planning                                      0.0000000000                    0.0018132366
+  Identification and Authentication                         0.0009066183                    0.0045330916
+  Incident Response                                         0.0090661831                    0.0027198549
+  Maintenance                                               0.0054397099                    0.0036264733
+  Media Protection                                          0.0045330916                    0.0000000000
+  Personnel Security                                        0.0000000000                    0.0045330916
+  Physical and Environmental Protection                     0.0018132366                    0.0018132366
+  Planning                                                  0.0000000000                    0.0090661831
+  Program Management                                        0.0009066183                    0.0063463282
+  Risk Assessment                                           0.0063463282                    0.0027198549
+  Security Assessment and Authorization                     0.0090661831                    0.0090661831
+  System and Communications Protection                      0.0154125113                    0.0145058930
+  System and Information Integrity                          0.0126926564                    0.0126926564
+  System and Services Acquisition                                                           0.0262919311
+
+
+[1] "###############Transitivity###############"
+[1] "The below statistics ignore nodes without edges"
+[1] "Average Access Control Transitivity: 0.289067"
+[1] "Average Awareness and Training Transitivity: 0.189394"
+[1] "Average Audit and Accountability Transitivity: 0.391476"
+[1] "Average Security Assessment and Authorization Transitivity: 0.438505"
+[1] "Average Configuration Management Transitivity: 0.346209"
+[1] "Average Contingency Planning Transitivity: 0.370075"
+[1] "Average Identification and Authentication Transitivity: 0.392136"
+[1] "Average Incident Response Transitivity: 0.476550"
+[1] "Average Maintenance Transitivity: 0.353390"
+[1] "Average Media Protection Transitivity: 0.338305"
+[1] "Average Physical and Environmental Protection Transitivity: 0.319928"
+[1] "Average Planning Transitivity: 0.216197"
+[1] "Average Personnel Security Transitivity: 0.402721"
+[1] "Average Risk Assessment Transitivity: 0.232813"
+[1] "Average System and Services Acquisition Transitivity: 0.271976"
+[1] "Average System and Communications Protection Transitivity: 0.365716"
+[1] "Average System and Information Integrity Transitivity: 0.354771"
+[1] "Average Program Management Transitivity: 0.537662"
+
+
+[1] "###############Complete Triads###############"
+[1] "The number of  Access Control Complete Triads: 38.000000"
+[1] "The number of  Awareness and Training Complete Triads: 1.000000"
+[1] "The number of  Audit and Accountability Complete Triads: 18.000000"
+[1] "The number of  Security Assessment and Authorization Complete Triads: 2.000000"
+[1] "The number of  Configuration Management Complete Triads: 25.000000"
+[1] "The number of  Contingency Planning Complete Triads: 17.000000"
+[1] "The number of  Identification and Authentication Complete Triads: 5.000000"
+[1] "The number of  Incident Response Complete Triads: 9.000000"
+[1] "The number of  Maintenance Complete Triads: 2.000000"
+[1] "The number of  Media Protection Complete Triads: 1.000000"
+[1] "The number of  Physical and Environmental Protection Complete Triads: 4.000000"
+[1] "The number of  Planning Complete Triads: 0.000000"
+[1] "The number of  Personnel Security Complete Triads: 6.000000"
+[1] "The number of  Risk Assessment Complete Triads: 1.000000"
+[1] "The number of  System and Services Acquisition Complete Triads: 12.000000"
+[1] "The number of  System and Communications Protection Complete Triads: 8.000000"
+[1] "The number of  System and Information Integrity Complete Triads: 4.000000"
+[1] "The number of  Program Management Complete Triads: 0.000000"
+
+
