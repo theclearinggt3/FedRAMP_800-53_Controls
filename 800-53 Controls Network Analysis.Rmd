@@ -1,9 +1,10 @@
 ---
-title: "800-53 Controls"
-output: pdf_document
+Title: "FedRAMP High Baseline Controls Analysis"
 ---
-
-#If packages are not installed on your computer, need to uncomment and install the following packages. 
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Install and load the following packages##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+```{r, results='hide'}
 #install.packages("readxl")
 #install.packages("readr")
 #install.packages("tidyverse")
@@ -11,7 +12,13 @@ output: pdf_document
 #install.packages("igraph")
 #install.packages("dplyr")
 #install.packages("sqldf")
-
+#install.packages("sna")
+#install.packages("intergraph")
+#install.packages("RColorBrewer")
+#install.packages("randomcoloR")
+#install.packages("caret")
+#install.packages("reshape2")
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -21,15 +28,20 @@ library(tidyverse)
 library(ggplot2)
 library(igraph)
 library(dplyr)
+library(sna)
+library(intergraph)
+library(RColorBrewer)
+library(randomcoloR)
+library(caret) 
+library(reshape2) 
 ```
 
 **~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
-##Eugene's Data Cleaning for Gephi##
+##Data Cleaning##
 **~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
-
 ##800-53 subcontrol relations
 ```{r}
-#File path for Eugene Hwang
+#File path
 Controls <- read_excel("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/800-53 subcontrol relations.xlsx")
 
 #Set working directory path
@@ -39,12 +51,12 @@ setwd("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls")
 #Get working directory path
 getwd()
 
-#**Selecting only the columns needed and renaming columns with underscore **
+#Selecting only the columns needed and renaming columns with underscore **
 Controls_mod <- Controls
 
 names(Controls_mod) <- c("Control_Family","Family_Name","Control_Name", "Main_Control","Control_Enhancement_Name", "Control_Enhancement","Combined","Related_Controls","Low","Low_1","Tailoring_Action","Medium","Medium_1","High","High_1","Priority","Impact")
 
-#**Only looking at High Impact Controls
+#Only looking at High Impact Controls
 Gephi_Controls <- Controls_mod %>%
   filter(High == "Y") %>% #filtering to High Baseline
   select(Control_Family, Family_Name, Main_Control, Control_Name, Control_Enhancement, Combined, Related_Controls)
@@ -183,112 +195,78 @@ Gephi_Controls6 <- Gephi_Controls4 %>%
 
 ```
 
-##Network Analysis
-**Creating Node and Edge tables** 
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Network Preparation##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Creating Node table
 ```{r}
-#***~***~***
-#Create Node Table
-#***~***~***
-
 #Capturing distinct Main Controls
-Nodes <- distinct(Controls_mod, Control_Family, Family_Name, Main_Control, Control_Name)
+nodes <- distinct(Controls_mod, Control_Family, Family_Name, Main_Control, Control_Name)
 
 #Adding Label column  
-Nodes["Label"] = Nodes$Main_Control 
+nodes["Label"] = nodes$Main_Control 
 
 #Reordering and renaming columns
-Nodes <- Nodes %>%
+nodes <- nodes %>%
   select (Main_Control, Label, Control_Name, Control_Family, Family_Name) %>%
   rename("Id" = Main_Control) 
 
+nodes = nodes[complete.cases(nodes$Id),]
+
 #Write to CSV 
-write_csv(Nodes, "Nodes.csv") #exporting the Node file into a csv file called Nodes.csv into your working directory you set earlier.
+write_csv(nodes, "Nodes.csv") #exporting the Node file into a csv file called Nodes.csv into your working directory you set earlier.
+```
 
-#***~***~***
-#Create Edges Table
-#***~***~***
-
-Edges <- Gephi_Controls4 %>%
+##Creating Edge table
+```{r}
+edges <- Gephi_Controls4 %>%
   group_by(Main_Control, Related_Controls) %>%
   summarise(n = n()) %>%
   rename(Source = Main_Control, Target = Related_Controls, Weight=n) #%>%
   #arrange(desc(Weight))
 
 #Write to CSV
-write_csv(Edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
+write_csv(edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
 ```
 
-##Network Metrics
-**Old analysis** 
+##Load edge and node files if needed.  Only include complete nodes and build graph.
 ```{r}
-#Plotting graph
-plot(net, edge.arrow.size=.2, edge.curved=0,
-     vertex.color="orange", vertex.frame.color="#555555",
-     vertex.label=V(net)$media, vertex.label.color="black",
-     vertex.label.cex=.7) 
-     
-#Transitivity
-# A measure of social process such that friends of friends will become friends. A high transitivity measure indicates a tightly
-# knit collaborative environment (clique), while a low transitivity measure indicates that neighboring researchers do not collaborate
-# with each other (star).
+#node_file = '/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/Gephi/Nodes.csv'
+#edge_file = '/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls/Gephi/Edges.csv'
 
-transitivity(net, vids = "SC-26", type="local")
-transitivity(net, type="local")
+#nodes = read.csv(node_file, header = T)
+#nodes = nodes[complete.cases(nodes$Id),]
+#edges = read.csv(edge_file, header = T)
 ```
 
-These are the main functions used to create and analyze our network.
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Network Functions##
+##These are the main functions used to create and analyze our network.##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
 
-First, install and load the following packages:
-
-```{r, results='hide'}
-#install.packages("sna")
-#install.packages("intergraph")
-#install.packages("RColorBrewer")
-#install.packages("randomcoloR")
-#install.packages("caret")
-#install.packages("reshape2")
-
-library(sna)
-library(intergraph)
-library(RColorBrewer)
-library(randomcoloR)
-library(caret) 
-library(reshape2) 
-```
-
-**Load Functions**
-
-The following function builds the graph with all of the node and edge level attributes that are found in the data provided or derived by the data provided.
-```{r}
-#Turning Networks into igraph objects
-net <- graph_from_data_frame(d=Edges, vertices=Nodes, directed=T) 
-
-#Nodes and Edges
-E(g)       # The edges of the "net" object
-V(g)       # The vertices of the "net" object
-```
-
+##Load Functions
+**This function builds the graph with all of the node and edge level attributes that are found in the data provided or derived by the data provided.**
 ```{r}
 build_graph <- function (nodes, edges) {
   g = graph.empty(nrow(nodes), directed = TRUE)
   # covert R factor to character
-  V(g)$Id = as.character(Nodes$Id)
-  V(g)$Label = as.character(Nodes$Label)
-  V(g)$Control_Name = as.character(Nodes$Control_Name)
-  V(g)$Control_Family = as.character(Nodes$Control_Family)
-  V(g)$Family_Name = as.character(Nodes$Family_Name)
+  V(g)$name = as.character(nodes$Id)
+  V(g)$Label = as.character(nodes$Label)
+  V(g)$Control_Name = as.character(nodes$Control_Name)
+  V(g)$Control_Family = as.character(nodes$Control_Family)
+  V(g)$Family_Name = as.character(nodes$Family_Name)
+  
   # a edge array: odd index -> source, even index -> target
-  edge_list = as.vector(t(cbind(as.character(Edges$Source), as.character(Edges$Target))))
+  edge_list = as.vector(t(cbind(as.character(edges$Source), as.character(edges$Target))))
   g = add_edges(g, edge_list)
-  E(g)$Weight = Edges$Weight 
-  #remove nodes by degree 
-  #g = filter_node_by_number_publication(g, num_pub_floor)
+  E(g)$weight = edges$Weight 
+
   return(g)
 }
 ```
-**The next functions are essential for calculating the network level statistics.**
 
-This function calculates assortativity, which is a single statistic measuring the degree of connections betweeen similiar nodes.
+##The next functions are essential for calculating the network level statistics.
+**This function calculates assortativity, which is a single statistic measuring the degree of connections betweeen similiar nodes.**
 ```{r}
 get_assortativity <- function(g, attr) {
   cat = igraph::get.vertex.attribute(g, attr )
@@ -297,7 +275,8 @@ get_assortativity <- function(g, attr) {
   return(assortativity);
 }
 ```
-The next function is used to calculate average degree, which calculates the average connections per node for each attribute specified.
+
+**This function is used to calculate average degree, which calculates the average connections per node for each attribute specified.**
 ```{r}
 get_degree <- function(g, attr){
   cat = igraph::get.vertex.attribute(g, attr )
@@ -306,7 +285,18 @@ get_degree <- function(g, attr){
   return(g)
 }
 ```
-The next function calculates a confusion matrix which generates percentages associated with frequencies of collaboration across levels of a particular attribute.
+
+**This function calculates the transitivity, which measures how tightly knit a community is.**
+**A high transitivity measure indicates a tightly knit collaborative environment (clique), while a low transitivity measure indicates that neighboring researchers do not collaborate with each other (star).**
+```{r}
+get_transitivity <- function(g) {
+  cc = transitivity(g, type='local', vids=V(g)$name)
+  V(g)$cc = cc 
+  return(g)
+}
+```
+
+**This function calculates a confusion matrix which generates percentages associated with frequencies of collaboration across levels of a particular attribute.**
 ```{r}
 # calcuate a confusion table between groups 
 get_group_confusion <- function(nodes, edges, attr) {
@@ -336,15 +326,8 @@ get_group_confusion <- function(nodes, edges, attr) {
   return(prop_table)
 }
 ```
-The next function calculates the transitivity, which measures how tightly knit a community is.
-```{r}
-get_transitivity <- function(g) {
-  cc = transitivity(g, type='local', vids=V(g)$name)
-  V(g)$cc = cc 
-  return(g)
-}
-```
-The following function counts the number of cliques with *n* connected nodes in the network. For our analysis, we used this function to count complete triads.
+
+**This function counts the number of cliques with "n" connected nodes in the network. For our analysis, we used this function to count complete triads.**
 ```{r}
 # looping through clique to count group membership in clique 
 get_cliques_membership <- function(g, n, attr) {
@@ -366,7 +349,8 @@ get_cliques_membership <- function(g, n, attr) {
   return(m)
 }
 ```
-This function takes the confusion matrix and adjusts the percentages to reflect the percentages to be a proportion of the particular level of an attribute rather than reflecting the overall distribution.
+
+**This function takes the confusion matrix and adjusts the percentages to reflect the percentages to be a proportion of the particular level of an attribute rather than reflecting the overall distribution.**
 ```{r}
 get_confusion_within_group <- function(prop_table) {
   conf_mtx <- prop_table
@@ -388,7 +372,8 @@ get_confusion_within_group <- function(prop_table) {
   return(conf_mtx)
 }
 ```
-The next function takes the output of the previous function to calculate the within and outside group collaboration for levels of a particular attribute.
+
+**This function takes the output of the previous function to calculate the within and outside group collaboration for levels of a particular attribute.**
 ```{r}
 get_in_out_tbl <- function(conf_mtx){
   sum_tbl <- conf_mtx %>% dplyr::group_by(Source_Groups) %>% 
@@ -405,16 +390,18 @@ get_in_out_tbl <- function(conf_mtx){
 }
 ```
 
-The following functions use the utility functions listed above and get network statistics by year and overall.
+**This functions use the utility functions listed above to get the overall network statistics.**
 ```{r}
 analyze_graph <- function(g, nodes, edges, attr) {
-  #attr: Group, Activity, Discipline
+  #attr: Family Name
   stats = list()
   print(attr)
-  # 1.assortativity
+  
+  # 1.Assortativity
   assortativity = get_assortativity(g, attr)
   stats$assortativity = assortativity
-# 2. Average degree, transtivity, and degee distributions
+  
+  # 2. Average degree, Transtivity, and Degee distributions
   g = get_degree(g, attr)
   g = get_transitivity(g)
   var = vertex_attr(g, attr)
@@ -442,25 +429,24 @@ analyze_graph <- function(g, nodes, edges, attr) {
   stats$strength = strs
   stats$transitivity = trs
   stats$degree_dist =  dg_dist
-  
-  # 3. confusion matrix  dyad level
+
+  # 3. Confusion matrix dyad level
   prop_table = get_group_confusion(nodes, edges, attr)
   stats$prop_table = prop_table
-  
-  # 3a. within group vs outside group %
+
+  # 3a. Within group vs Outside group %
   in_out_table = get_in_out_tbl(get_confusion_within_group(prop_table))
   stats$in_out_table = in_out_table
   
-  ## calcuate graph level statistics
-  # the ratio of the number of edges and the number of possible edges
+  ## Calcuate graph level statistics
+  ## The ratio of the number of edges and the number of possible edges
   stats$density = edge_density(g, loops=FALSE)
-  
-  
-  #count group membership in complete triad graph
+
+  ## Count group membership in complete triad graph
   print(paste(rep('#', 30),collapse = ''))
   n = 3 
   m = get_cliques_membership(g, n, attr)
-  
+
   triad_counts = list()
   for (i in 1:lvl_len) {
     lvl = lvls[i]
@@ -470,40 +456,119 @@ analyze_graph <- function(g, nodes, edges, attr) {
   }
   stats$triads_counts = triad_counts
   return(stats)
-  #group blocks
-  #clustering analysis
-  #get_blockmodel()
 }
 
 get_stats <- function(g, attr) {
-  all_years_stats = analyze_graph(g, nodes, edges,attr)
-  # looping over years
-  yr_range = 2002:2016
-  stats_by_year = list()
-  for (yr in yr_range) {
-    yr_edges = edges[edges$PUB_YEAR<=yr,]
-    yr_g = build_graph(nodes, yr_edges)
-    stat =  analyze_graph(yr_g, nodes, yr_edges, attr)
-    print(stat)
-    stats_by_year[[as.character(yr)]]  = stat
-  }
+  all_years_stats = analyze_graph(g, nodes, edges, attr)
   stats = list()
   stats[['all_years_stats']] = all_years_stats
-  stats[['stats_by_year']] = stats_by_year
   return(stats)
 }
 ```
 
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Plotting Functions##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+**This function plots the confusion matrix as a heat map.**
+```{r}
+plot_block_heatmap <- function(conf) {
+  conf.l = melt(conf)
+  ggplot(conf.l, aes(Source_Groups, Target_Groups)) + geom_tile(aes(fill = value),colour = "white")  +  
+  scale_fill_gradient(low = "white", high = "steelblue") +
+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+}
+```
 
+**This function plots the within and outside group percentages by level of attribute.**
+```{r}
+plot_in_out <- function(stats, attr_name){
+  plot.data <- stats$all_years_stats$in_out_table %>% 
+    arrange(Source_Groups, desc(match))
+  plot.data$Source_Groups <- as.factor(plot.data$Source_Groups)
+  ggplot(data=plot.data, aes(x=Source_Groups, y=in_out_pct, fill=match)) +
+    geom_bar(stat='identity') + coord_flip() +
+    scale_fill_manual(values=c("slategray2", "navyblue")) +
+    xlab(attr_name) + ylab("Percentage of Control Family") + 
+    ggtitle("Percentage of Collaboration Within and Outside of Control Family") 
+}
+```
 
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Printing Functions##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+**This function prints the statistics.**
+```{r}
+print_stat <- function(all_years_stats) {
+  
+  #Print Assortativity
+  print(paste(c(rep('#', 15), 'assortativity', rep('#', 15)),collapse = ''))
+  print(paste0('assortativity: ', as.character(all_years_stats$assortativity)))
+  cat('\n')
+  cat('\n')
+  
+  #Print Degree
+  print(paste(c(rep('#', 15), 'Degree', rep('#', 15)),collapse = ''))
+  dgs = all_years_stats[['degree']]
+  dns = names(dgs)
+  for (d in dns) {
+    print(paste0('Average ', d,  ' Degree: ', sprintf("%.6f",dgs[[d]] )))
+  }
+  cat('\n')
+  cat('\n')
+  
+  #Print Confusion table
+  print(paste(c(rep('#', 15), 'Confusion Table', rep('#', 15)),collapse = ''))
+  print(all_years_stats$prop_table)
+  cat('\n')
+  cat('\n')
+  
+  #Print Transitivity
+  print(paste(c(rep('#', 15), 'Transitivity', rep('#', 15)),collapse = ''))
+  print('The below statistics ignore nodes without edges')
+  trs = all_years_stats[['transitivity']]
+  tns = names(trs)
+  for (t in tns) {
+    print(paste0('Average ', t,  ' Transitivity: ', sprintf("%.6f",trs[[t]] )))
+  }
+  cat('\n')
+  cat('\n')
+  
+  #print Triad count
+  print(paste(c(rep('#', 15), 'Complete Triads', rep('#', 15)),collapse = ''))
+  t_c = all_years_stats[['triads_counts']]
+  tns = names(t_c)
+  for (t in tns) {
+    print(paste0('The number of  ', t,  ' Complete Triads: ', sprintf("%.6f",t_c[[t]] )))
+  }
+  cat('\n')
+  cat('\n')
+}
+```
 
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Metric Analysis by Family Name##
+**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+**Build igraph table**
+```{r}
+g <- build_graph(nodes, edges)  
 
+#View Edge and Vertices table
+E(g)[[]]     # The edges of the "net" object
+V(g)[[]]     # The vertices of the "net" object
+plot(g)
+```
 
+**Gather stats by Family Name**
+```{r}
+q1_stats = get_stats(g, attr='Family_Name')
+all_years_stats = analyze_graph(g, nodes, edges, attr ='Family_Name')
+```
 
-
-
-
-
-
-
-
+**Print and plot graphs**
+```{r}
+print('Q1: Do control families relate with each other more of then than with other control families?')
+q1_all_years_stats = q1_stats[['all_years_stats']] 
+print_stat(q1_all_years_stats)
+plot_block_heatmap(q1_all_years_stats$prop_table)
+plot_in_out(q1_stats,"Control Families")
+```
