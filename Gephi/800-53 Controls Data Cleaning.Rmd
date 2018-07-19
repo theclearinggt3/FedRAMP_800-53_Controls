@@ -159,6 +159,7 @@ Gephi_Controls4 <- Gephi_Controls1 %>%
 ```
 
 ##Removes duplicates if the main control has two of the same related controls
+##Does not account for reverse duplicates
 **Gephi_Controls5 & Gephi_Controls6**
 ```{r}
 #This removes 36 duplicates (ex. AU-6 & AU-12, AC-18 & AC-19)
@@ -197,23 +198,31 @@ write_csv(nodes, "Nodes.csv") #exporting the Node file into a csv file called No
 
 ##Creating Edge table
 ```{r}
-edges <- Gephi_Controls4 %>%
-  group_by(Main_Control, Related_Controls) %>%
-  summarise(n = n()) %>%
-  rename(Source = Main_Control, Target = Related_Controls, Weight=n) #%>%
-  #arrange(desc(Weight))
+#Selecting two columns
+edges_duplicates <- Gephi_Controls4[,c("Main_Control","Related_Controls")]
+
+#Need Plyr, but this package does not work well with tidyverse
+library(plyr)
+
+#Getting frequency for reverse duplicates
+edges_duplicates_1 <- count(apply(edges_duplicates,1,function(x) paste(sort(x), collapse='|')))
+
+#Splitting up the Source and Target columns
+edges_duplicates_2 <- within(edges_duplicates_1, x<-data.frame(do.call('rbind', strsplit(as.character(x),'|',fixed=TRUE)))) 
+
+#Renaming column names
+names(edges_duplicates_2$x)[1] <- "Source"
+names(edges_duplicates_2$x)[2] <- "Target"
+names(edges_duplicates_2)[2] <- "Weight"
 
 #Write to CSV
-write_csv(edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
+write.table(edges_duplicates_2, file="Edges.csv",sep=",",row.names=F)
 
+#Remove tables
+rm(edges_duplicates,edges_duplicates_1,edges_duplicates_2)
 
-#Duplicate Combinations Testing
-
-edges_duplicates <- subset(edges, Source=="AU-6" & Target == "AU-12" | Source == "AU-12" & Target == "AU-6" | Source=="AC-14" & Target == "CP-2" | Source == "CP-2" & Target == "AC-14")
-
-edges_duplicates["Combined"] <- paste(c(1:2), sep = "")
-
-
+#This gets the duplicates but does not provide the frequency
+edges_duplicates4 <- edges_duplicates[!duplicated(apply(edges_duplicates,1,function(x) paste(sort(x),collapse=''))),] 
 ```
 
 
@@ -222,26 +231,73 @@ edges_duplicates["Combined"] <- paste(c(1:2), sep = "")
 
 
 
+#**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+#Archive analysis
+#**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
+##Original Edge table creation
+```{r}
+edges <- Gephi_Controls4 %>%
+  group_by(Main_Control, Related_Controls) %>%
+  summarise(n = n()) %>%
+  rename(Source = Main_Control, Target = Related_Controls, Weight=n) #%>%
+  #arrange(desc(Weight))
 
+#Write to CSV
+write_csv(edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
+```
 
+##Duplicate Combinations Code
+```{r}
+#Gathering sample data
+edges_duplicates <- subset(edges, Source=="AU-6" & Target == "AU-12" | Source == "AU-12" & Target == "AU-6" | Source=="AC-14" & Target == "CP-2" | Source == "CP-2" & Target == "AC-14")
 
+#Selecting two columns
+edges_duplicates <- edges_duplicates[,c(1:2)]
 
+#Getting frequency for reverse duplicates
+edges_duplicates_1 <- count(apply(edges_duplicates,1,function(x) paste(sort(x), collapse='|')))
 
+#Splitting up the Source and Target columns
+edges_duplicates_2 <- within(edges_duplicates_1, x<-data.frame(do.call('rbind', strsplit(as.character(x),'|',fixed=TRUE)))) 
 
+#Renaming column names
+names(edges_duplicates_2$x)[1] <- "Source"
+names(edges_duplicates_2$x)[2] <- "Target"
+names(edges_duplicates_2)[2] <- "Weight"
 
+#Write to CSV
+write.table(edges_duplicates_2, file="edges_duplicates.csv",sep=",",row.names=F)
 
+#Remove tables
+rm(edges_duplicates,edges_duplicates_1,edges_duplicates_2)
+```
 
+##Old analysis
+```{r}
+#Trims leading and trailing spaces
+edges_duplicates$Source <- trimws(edges_duplicates$Source)
+edges_duplicates$Target <- trimws(edges_duplicates$Target)
 
+#Concatenate two columns
+edges_duplicates$Combined <- paste(trimws(edges_duplicates$Source),"-",trimws(edges_duplicates$Target))
 
+#Count duplicates and adds 
+#https://www.miskatonic.org/2012/09/24/counting-and-aggregating-r/
+count(edges_duplicates, c("Source","Target"))
 
+#Identifies reverse duplicates but does not provide a count or frequency  
+#https://stackoverflow.com/questions/22756392/deleting-reversed-duplicates-with-r
+edges_duplicates[!duplicated(apply(edges_duplicates,1,function(x) paste(sort(x),collapse=''))),]
 
+#Remove tables
+rm(edges_duplicates_1, edges_duplicates_2, edges_duplicates_3, edges_duplicates_4)
+rm(test,test2,test3)
+rm(df,foo,foo2)
+rm(edges_duplicates, edges_duplicates_1)
 
-
-
-
-
-
-
-
-
-
+#Split column at delimiter in data frame [duplicate]
+#https://stackoverflow.com/questions/7069076/split-column-at-delimiter-in-data-frame/28612925
+df <- data.frame(ID=11:13, FOO=c('a|b','b|c','x|y'))
+foo <- data.frame(do.call('rbind', strsplit(as.character(df$FOO),'|',fixed=TRUE)))
+foo2 <- within(df, FOO<-data.frame(do.call('rbind', strsplit(as.character(FOO), '|', fixed=TRUE))))
+```

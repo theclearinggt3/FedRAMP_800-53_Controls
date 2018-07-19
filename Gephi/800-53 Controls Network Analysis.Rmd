@@ -355,6 +355,20 @@ print_stat <- function(all_years_stats) {
 }
 ```
 
+**This function prints the in/out table percentage**
+```{r}
+print_in_out_percent <- function(all_years_stats) {
+
+  #Print In/Out table
+  print(paste(c(rep('#', 15), 'In/Out Table', rep('#', 15)),collapse = ''))
+  print(all_years_stats$in_out_table)
+  cat('\n')
+  cat('\n')
+}
+```
+
+
+
 **~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
 ##Metric Analysis by Family Name##
 **~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**~**
@@ -378,6 +392,10 @@ q1_stats = get_stats(g, attr='Family_Name')
 print('Do control families relate with each other more of then than with other control families?')
 q1_all_years_stats = q1_stats[['all_years_stats']] 
 print_stat(q1_all_years_stats)
+
+print('In Out Table Percentage')
+q2_all_years_stats = q1_stats[['all_years_stats']] 
+print_in_out_percent(q2_all_years_stats)
 ```
 
 **Writing to an output file**
@@ -385,6 +403,10 @@ print_stat(q1_all_years_stats)
 sink('statistics.txt')
 print_stat(q1_all_years_stats)
 sink()
+
+#sink('statistics_in_out_percentage')
+#print_in_out_percent(q2_all_years_stats)
+#sink()
 ```
 
 **Plot graphs**
@@ -405,3 +427,7 @@ png("Collaboration.png", width = 12, height = 8, units = 'in', res = 1500)
 plot_in_out(q1_stats,"Control Families")
 dev.off()
 ```
+
+
+
+
