@@ -205,4 +205,43 @@ edges <- Gephi_Controls4 %>%
 
 #Write to CSV
 write_csv(edges, "Edges.csv") #exporting the Edge file into a csv file called Edges.csv into your working directory you set earlier.
+
+
+#Duplicate Combinations Testing
+
+edges_duplicates <- subset(edges, Source=="AU-6" & Target == "AU-12" | Source == "AU-12" & Target == "AU-6" | Source=="AC-14" & Target == "CP-2" | Source == "CP-2" & Target == "AC-14")
+
+edges_duplicates["Combined"] <- paste(c(1:2), sep = "")
+
+
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
