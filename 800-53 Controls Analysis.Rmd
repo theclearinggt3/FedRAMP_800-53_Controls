@@ -14,6 +14,7 @@ output: pdf_document
 #install.packages("sqldf")
 
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
@@ -22,6 +23,8 @@ library(tidyverse)
 library(ggplot2)
 library(igraph)
 library(dplyr)
+library(plyr)
+library(sqldf)
 ```
 
 ##1. 800-53 subcontrol relations
@@ -49,13 +52,13 @@ Reading in the data set. It is the third version, last edited on June 13th.
 
 #Set working directory path
 #setwd("/Users/eugenehwang/Documents/FedRAMP/Data")
-setwd("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls")
+#setwd("/Users/eugenehwang/Documents/GitHub/FedRAMP_800-53_Controls")
 
 #Get working directory path
-getwd()
+#getwd()
 
 
-Controls <- read_excel("~/Desktop/The Clearing/800-53 subcontrol relations v3.xlsx")
+Controls <- read_excel("~/Desktop/GitHub/FedRAMP_800-53_Controls/800-53 subcontrol relations.xlsx")
 head(Controls)
 ```
 
@@ -67,9 +70,11 @@ Filtering through the data set to analyze the high baseline controls.
 HighControls <- Controls %>%
   filter(High == "Y") %>% #filtering to High Baseline 
   rename(`Control Family` = Family) %>% #renaming the Family variable to Control Family
-  select(`Control Family`, `Main Control`, `Control Enhancement`, Combined, `Related Controls`) 
+  select(`Control Family`, `Main Control`, `Control Enhancement`, Combined, `Related Controls`) %>%
+  distinct()
 
-head(HighControls)
+HighControls
+View(HighControls)
 ```
 
 ##High Control 1
@@ -108,9 +113,10 @@ HighControls1 <- HighControls %>%
          `Related Control 25` = str_trim(`Related Control 25`, side = "both"),
          `Related Control 26` = str_trim(`Related Control 26`, side = "both"),
          `Related Control 27` = str_trim(`Related Control 27`, side = "both"),
-         `Related Control 28` = str_trim(`Related Control 28`, side = "both")) #removing empty spaces in those variable's values. Not the smartest way of coding but does the job. 
+         `Related Control 28` = str_trim(`Related Control 28`, side = "both")) %>% #removing empty spaces in those variable's values. Not the smartest way of coding but does the job. 
+  distinct()
 
-head(HighControls1)
+HighControls1
 ```   
    
 ##High Controls 2   
@@ -166,9 +172,10 @@ HighControls2 <- HighControls %>%
          `Related Control 25` = str_trim(`Related Control 25`, side = "both"),
          `Related Control 26` = str_trim(`Related Control 26`, side = "both"),
          `Related Control 27` = str_trim(`Related Control 27`, side = "both"),
-         `Related Control 28` = str_trim(`Related Control 28`, side = "both")) #removing empty spaces in those variable's values. Not the smartest way of coding but does the job.
+         `Related Control 28` = str_trim(`Related Control 28`, side = "both")) %>%  #removing empty spaces in those variable's values. Not the smartest way of coding but does the job.
+  distinct()
 
-head(HighControls2)
+HighControls2
 ```    
     
 ##High Controls 3
@@ -182,9 +189,10 @@ HighControls3 <- HighControls1 %>%
   rename(`Related Controls` = `Value`) %>%
   select(-`AllRelatedControls`, -`AllRelatedControls2`) %>%
   ungroup() %>%
-  arrange(`Main Control`, `Combined`) 
+  arrange(`Main Control`, `Combined`) %>%
+  distinct()
 
-head(HighControls3)
+HighControls3
 ```
      
 ##High Controls 4   
@@ -199,9 +207,10 @@ HighControls4 <- HighControls1 %>%
   rename(`Related Controls` = `Value`) %>%
   select(-`AllRelatedControls`, -`AllRelatedControls2`) %>%
   ungroup() %>%
-  arrange(`Main Control`) 
+  arrange(`Main Control`) %>%
+  distinct()
 
-head(HighControls4)
+HighControls4
 ```
     
         
@@ -212,9 +221,11 @@ head(HighControls4)
 CountRC <- HighControls3 %>%
   group_by(`Related Controls`) %>%
   summarise(n_RelatedControls = n()) %>%
-  arrange(desc(n_RelatedControls))
+  arrange(desc(n_RelatedControls)) %>%
+  distinct()
 
 head(CountRC)
+
 
 write_csv(CountRC, "CountRC.csv") #exporting CountRC into a csv file called CountRC.csv into your directory. 
 
@@ -243,7 +254,8 @@ CountRC %>%
 CountRC_CE <- HighControls3 %>%
   group_by(`Combined`) %>%
   summarise(n_RelatedControls = n()) %>%
-  arrange(desc(n_RelatedControls))
+  arrange(desc(n_RelatedControls)) %>%
+  distinct()
 
 head(CountRC_CE)
 
@@ -272,9 +284,10 @@ CountRC_CE %>%
 CountRC_MC <- HighControls3 %>%
   group_by(`Main Control`, `Related Controls`) %>%
   summarise(n_RelatedControls = n()) %>%
-  arrange(desc(n_RelatedControls))
+  arrange(desc(n_RelatedControls)) %>%
+  distinct()
 
-head(CountRC_MC)  
+head(CountRC_MC) 
   
 write_csv(CountRC_MC, "CountRC_MC.csv") #exporting CountRC_MC into a csv file called CountRC_MC.csv into your directory. 
 
@@ -303,7 +316,8 @@ HighControls3 %>%
 CountRC_CF <- HighControls3 %>%
   group_by(`Control Family`, `Related Controls`) %>%
   summarise(n_RelatedControls = n()) %>%
-  arrange(desc(n_RelatedControls))
+  arrange(desc(n_RelatedControls)) %>%
+  distinct()
 
 head(CountRC_CF)
 
@@ -341,7 +355,8 @@ MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX MATRIX
 CountCF <- HighControls3 %>%
   group_by(`Control Family`) %>%
   summarise(n_ControlFamily = n()) %>%
-  arrange(desc(n_ControlFamily))
+  arrange(desc(n_ControlFamily)) %>%
+  distinct()
 
 head(CountCF)
 
@@ -373,7 +388,8 @@ CountCFRatio <- HighControls3 %>%
   group_by(`Control Family`) %>%
   mutate(n_Controls_by_Fam = n_distinct(`Combined`),
          Ratio_Controls = n_Controls_by_Fam/n_TotalControls) %>% 
-  arrange(desc(Ratio_Controls))
+  arrange(desc(Ratio_Controls)) %>%
+  distinct()
 
 head(CountCFRatio)
 
