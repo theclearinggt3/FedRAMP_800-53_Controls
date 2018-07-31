@@ -565,12 +565,12 @@ Gephi_Controls6 <- Gephi_Controls4 %>%
 #Capturing distinct Main Controls
 Nodes <- distinct(Controls_mod, Control_Family, Family_Name, Main_Control, Control_Name)
 
-#Adding Name column  
-Nodes["Name"] = Nodes$Main_Control 
+#Adding Label column  
+Nodes["Label"] = Nodes$Main_Control 
 
 #Reordering and renaming columns
 Nodes <- Nodes %>%
-  select (Main_Control, Name, Control_Name, Control_Family, Family_Name) %>%
+  select (Main_Control, Label, Control_Name, Control_Family, Family_Name) %>%
   rename("Id" = Main_Control) 
 
 #Write to CSV 
